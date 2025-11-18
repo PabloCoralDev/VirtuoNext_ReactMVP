@@ -203,7 +203,9 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       }
 
       setIsCreateModalOpen(false);
-      // The real-time subscription will update the UI and clear isCreatingAsk
+      // Manually refetch to update UI immediately
+      await fetchAsks();
+      setIsCreatingAsk(false);
     } catch (error) {
       console.error('Error creating ask:', error);
       setIsCreatingAsk(false); // Clear creating state on error
@@ -251,7 +253,8 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
         if (updateError) throw updateError;
       }
 
-      // The real-time subscription will update the UI
+      // Manually refetch to update UI immediately
+      await fetchAsks();
     } catch (error) {
       console.error('Error placing bid:', error);
       alert('Failed to place bid. Please try again.');
@@ -282,7 +285,12 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
 
       await Promise.all(updatePromises);
       console.log('All bids updated successfully');
-      // The real-time subscription will update the UI
+
+      // Manually refetch to update UI immediately
+      await fetchAsks();
+      if (userType === 'soloist') {
+        await fetchContactReveals();
+      }
     } catch (error) {
       console.error('Error accepting bid:', error);
       alert('Failed to accept bid. Please try again.');
