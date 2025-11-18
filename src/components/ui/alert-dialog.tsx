@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog@1.1.6";
+import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 
 import { cn } from "./utils";
 import { buttonVariants } from "./button";
@@ -28,12 +28,13 @@ function AlertDialogPortal({
   );
 }
 
-function AlertDialogOverlay({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Overlay>) {
+const AlertDialogOverlay = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => {
   return (
     <AlertDialogPrimitive.Overlay
+      ref={ref}
       data-slot="alert-dialog-overlay"
       className={cn(
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
@@ -42,7 +43,8 @@ function AlertDialogOverlay({
       {...props}
     />
   );
-}
+});
+AlertDialogOverlay.displayName = "AlertDialogOverlay";
 
 function AlertDialogContent({
   className,
@@ -118,29 +120,35 @@ function AlertDialogDescription({
   );
 }
 
-function AlertDialogAction({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Action>) {
+const AlertDialogAction = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Action>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
+>(({ className, ...props }, ref) => {
   return (
     <AlertDialogPrimitive.Action
+      ref={ref}
+      data-slot="alert-dialog-action"
       className={cn(buttonVariants(), className)}
       {...props}
     />
   );
-}
+});
+AlertDialogAction.displayName = "AlertDialogAction";
 
-function AlertDialogCancel({
-  className,
-  ...props
-}: React.ComponentProps<typeof AlertDialogPrimitive.Cancel>) {
+const AlertDialogCancel = React.forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>
+>(({ className, ...props }, ref) => {
   return (
     <AlertDialogPrimitive.Cancel
+      ref={ref}
+      data-slot="alert-dialog-cancel"
       className={cn(buttonVariants({ variant: "outline" }), className)}
       {...props}
     />
   );
-}
+});
+AlertDialogCancel.displayName = "AlertDialogCancel";
 
 export {
   AlertDialog,

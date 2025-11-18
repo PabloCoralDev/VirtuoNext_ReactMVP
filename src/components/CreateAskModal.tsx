@@ -35,6 +35,7 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
   const [endDate, setEndDate] = useState('');
   const [semester, setSemester] = useState('Fall 2025');
   const [description, setDescription] = useState('');
+  const [auctionDuration, setAuctionDuration] = useState('7');
 
   const handleAddPiece = () => {
     if (currentPiece.trim()) {
@@ -49,7 +50,12 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    // Calculate auction end time based on selected duration
+    const now = new Date();
+    const durationDays = parseInt(auctionDuration);
+    const auctionEndTime = new Date(now.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
     onSubmit({
       soloistName: userName,
       instrument,
@@ -63,7 +69,9 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
       startDate: dateType === 'range' ? startDate : undefined,
       endDate: dateType === 'range' ? endDate : undefined,
       semester: dateType === 'semester' ? semester : undefined,
-      description
+      description,
+      auctionEndTime: auctionEndTime.toISOString(),
+      auctionStatus: 'active'
     });
 
     // Reset form
@@ -80,6 +88,7 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
     setEndDate('');
     setSemester('Fall 2025');
     setDescription('');
+    setAuctionDuration('7');
   };
 
   return (
@@ -322,6 +331,26 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
               rows={4}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="auctionDuration">Bidding Duration *</Label>
+            <Select value={auctionDuration} onValueChange={setAuctionDuration}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 day (24 hours)</SelectItem>
+                <SelectItem value="2">2 days (48 hours)</SelectItem>
+                <SelectItem value="3">3 days (72 hours)</SelectItem>
+                <SelectItem value="7">1 week (7 days)</SelectItem>
+                <SelectItem value="14">2 weeks (14 days)</SelectItem>
+                <SelectItem value="30">1 month (30 days)</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-gray-500">
+              How long pianists can bid on your ask. Timer extends by 1 minute if a bid is placed in the final minute.
+            </p>
           </div>
 
           <div className="flex gap-3 pt-4">

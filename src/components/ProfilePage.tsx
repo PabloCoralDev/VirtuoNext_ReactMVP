@@ -20,6 +20,7 @@ interface ProfileData {
   name: string;
   bio: string;
   picture_url: string;
+  phone_number: string;
 }
 
 export function ProfilePage({ userId, userEmail, userName, userType, onBack }: ProfilePageProps) {
@@ -33,6 +34,7 @@ export function ProfilePage({ userId, userEmail, userName, userType, onBack }: P
     name: userName,
     bio: '',
     picture_url: '',
+    phone_number: '',
   });
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export function ProfilePage({ userId, userEmail, userName, userType, onBack }: P
       setIsLoading(true);
       const { data, error: fetchError } = await supabase
         .from('profiles')
-        .select('name, bio, picture_url')
+        .select('name, bio, picture_url, phone_number')
         .eq('id', userId)
         .single();
 
@@ -56,6 +58,7 @@ export function ProfilePage({ userId, userEmail, userName, userType, onBack }: P
           name: data.name || userName,
           bio: data.bio || '',
           picture_url: data.picture_url || '',
+          phone_number: data.phone_number || '',
         });
       }
     } catch (err) {
@@ -201,6 +204,7 @@ export function ProfilePage({ userId, userEmail, userName, userType, onBack }: P
             name: formData.name,
             bio: formData.bio,
             picture_url: formData.picture_url,
+            phone_number: formData.phone_number,
           })
           .eq('id', userId);
 
@@ -216,6 +220,7 @@ export function ProfilePage({ userId, userEmail, userName, userType, onBack }: P
             user_type: userType,
             bio: formData.bio,
             picture_url: formData.picture_url,
+            phone_number: formData.phone_number,
           });
 
         if (insertError) throw insertError;
@@ -370,6 +375,22 @@ export function ProfilePage({ userId, userEmail, userName, userType, onBack }: P
                   Account type cannot be changed
                 </p>
               </div>
+
+              {userType === 'pianist' && (
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone Number (Optional)</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 (555) 123-4567"
+                    value={formData.phone_number}
+                    onChange={(e) => setFormData(prev => ({ ...prev, phone_number: e.target.value }))}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Your phone number will be shared with soloists when they accept your bid
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 

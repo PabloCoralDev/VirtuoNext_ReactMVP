@@ -2,10 +2,13 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { AskCard } from './AskCard';
+import { AskCardSkeleton } from './AskCardSkeleton';
 import { CreateAskModal } from './CreateAskModal';
 import { ProfileSidebar } from './ProfileSidebar';
+import { ContactCard } from './ContactCard';
 import { LogOut, Plus } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
+import type { ContactReveal } from '@/types/auction';
 
 interface MarketplaceProps {
   userId: string;
@@ -31,6 +34,9 @@ export interface Ask {
   endDate?: string;
   semester?: string;
   description: string;
+  auctionEndTime?: string;
+  auctionStatus?: 'active' | 'completed' | 'expired';
+  createdAt: string;
   bids: Bid[];
 }
 
@@ -46,11 +52,16 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
   const [asks, setAsks] = useState<Ask[]>([]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingAsk, setIsCreatingAsk] = useState(false);
+  const [contactReveals, setContactReveals] = useState<ContactReveal[]>([]);
+  const [isLoadingContacts, setIsLoadingContacts] = useState(true);
 
   // Fetch asks with their bids
-  const fetchAsks = async () => {
+  const fetchAsks = async (showLoading = false) => {
     try {
-      setIsLoading(true);
+      if (showLoading) {
+        setIsLoading(true);
+      }
 
       // Fetch all asks
       const { data: asksData, error: asksError } = await supabase
@@ -84,6 +95,9 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
         endDate: ask.end_date,
         semester: ask.semester,
         description: ask.description,
+        auctionEndTime: ask.auction_end_time,
+        auctionStatus: ask.auction_status as 'active' | 'completed' | 'expired' | undefined,
+        createdAt: ask.created_at,
         bids: (bidsData || [])
           .filter(bid => bid.ask_id === ask.id)
           .map(bid => ({
@@ -103,29 +117,65 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
     }
   };
 
+  // Fetch contact reveals for soloists
+  const fetchContactReveals = async () => {
+    if (userType !== 'soloist') return;
+
+    try {
+      setIsLoadingContacts(true);
+      const { data, error } = await supabase
+        .from('contact_reveals')
+        .select('*')
+        .eq('soloist_id', userId)
+        .order('revealed_at', { ascending: false });
+
+      if (error) throw error;
+      setContactReveals(data || []);
+    } catch (error) {
+      console.error('Error fetching contact reveals:', error);
+    } finally {
+      setIsLoadingContacts(false);
+    }
+  };
+
   useEffect(() => {
-    fetchAsks();
+    fetchAsks(true); // Show loading on initial fetch
+    if (userType === 'soloist') {
+      fetchContactReveals();
+    }
 
     // Subscribe to real-time changes
     const asksSubscription = supabase
       .channel('asks-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'asks' }, () => {
-        fetchAsks();
+        fetchAsks(); // Don't show loading on real-time updates
+        setIsCreatingAsk(false); // Clear creating state when new ask appears
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bids' }, () => {
-        fetchAsks();
+        fetchAsks(); // Don't show loading on real-time updates
+        if (userType === 'soloist') {
+          fetchContactReveals();
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_reveals' }, () => {
+        if (userType === 'soloist') {
+          fetchContactReveals();
+        }
       })
       .subscribe();
 
     return () => {
       asksSubscription.unsubscribe();
     };
-  }, []);
+  }, [userType]);
 
   const handleCreateAsk = async (newAsk: Omit<Ask, 'id' | 'bids'>) => {
     try {
+      setIsCreatingAsk(true); // Show creating state
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
+
+      console.log('Creating ask with data:', newAsk); // Debug log
 
       const { error } = await supabase.from('asks').insert({
         user_id: user.id,
@@ -141,16 +191,23 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
         start_date: newAsk.startDate,
         end_date: newAsk.endDate,
         semester: newAsk.semester,
-        description: newAsk.description
+        description: newAsk.description,
+        auction_end_time: newAsk.auctionEndTime,
+        auction_status: newAsk.auctionStatus || 'active'
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error details:', error); // More detailed error
+        setIsCreatingAsk(false); // Clear creating state on error
+        throw error;
+      }
 
       setIsCreateModalOpen(false);
-      // The real-time subscription will update the UI
+      // The real-time subscription will update the UI and clear isCreatingAsk
     } catch (error) {
       console.error('Error creating ask:', error);
-      alert('Failed to create ask. Please try again.');
+      setIsCreatingAsk(false); // Clear creating state on error
+      alert(`Failed to create ask: ${error instanceof Error ? error.message : 'Unknown error'}. Check console for details.`);
     }
   };
 
@@ -159,7 +216,20 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      const { error } = await supabase.from('bids').insert({
+      // Get the ask to check auction end time
+      const ask = asks.find(a => a.id === askId);
+      if (!ask || !ask.auctionEndTime) {
+        throw new Error('Ask not found or has no auction end time');
+      }
+
+      // Check if we're in the last minute of the auction
+      const now = new Date();
+      const endTime = new Date(ask.auctionEndTime);
+      const timeLeft = endTime.getTime() - now.getTime();
+      const isLastMinute = timeLeft > 0 && timeLeft < 60 * 1000; // Less than 60 seconds
+
+      // Insert the bid
+      const { error: bidError } = await supabase.from('bids').insert({
         ask_id: askId,
         user_id: user.id,
         pianist_name: bid.pianistName,
@@ -168,7 +238,19 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
         status: 'pending'
       });
 
-      if (error) throw error;
+      if (bidError) throw bidError;
+
+      // If bid placed in last minute, extend auction by 1 minute
+      if (isLastMinute) {
+        const newEndTime = new Date(endTime.getTime() + 60 * 1000); // Add 1 minute
+        const { error: updateError } = await supabase
+          .from('asks')
+          .update({ auction_end_time: newEndTime.toISOString() })
+          .eq('id', askId);
+
+        if (updateError) throw updateError;
+      }
+
       // The real-time subscription will update the UI
     } catch (error) {
       console.error('Error placing bid:', error);
@@ -183,15 +265,23 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       if (!ask) return;
 
       // Update all bids: accept the selected one, reject all others
-      const updates = ask.bids.map(bid => {
+      const updatePromises = ask.bids.map(async bid => {
         const newStatus = bid.id === bidId ? 'accepted' : 'rejected';
-        return supabase
+        const { data, error } = await supabase
           .from('bids')
           .update({ status: newStatus })
-          .eq('id', bid.id);
+          .eq('id', bid.id)
+          .select();
+
+        if (error) {
+          console.error(`Error updating bid ${bid.id}:`, error);
+          throw error;
+        }
+        return data;
       });
 
-      await Promise.all(updates);
+      await Promise.all(updatePromises);
+      console.log('All bids updated successfully');
       // The real-time subscription will update the UI
     } catch (error) {
       console.error('Error accepting bid:', error);
@@ -251,6 +341,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
           <TabsList>
             <TabsTrigger value="all">All Asks</TabsTrigger>
             {userType === 'soloist' && <TabsTrigger value="my-asks">My Asks</TabsTrigger>}
+            {userType === 'soloist' && <TabsTrigger value="my-contacts">My Contacts</TabsTrigger>}
             {userType === 'pianist' && <TabsTrigger value="my-bids">My Bids</TabsTrigger>}
           </TabsList>
 
@@ -260,43 +351,91 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
                 <p className="text-gray-600">Loading asks...</p>
               </div>
-            ) : asks.length > 0 ? (
-              asks.map(ask => (
-                <AskCard
-                  key={ask.id}
-                  ask={ask}
-                  userType={userType}
-                  userName={userName}
-                  onPlaceBid={handlePlaceBid}
-                  onAcceptBid={handleAcceptBid}
-                />
-              ))
             ) : (
-              <div className="text-center py-12 text-gray-500">
-                No asks available yet. {userType === 'soloist' && 'Create your first ask to get started!'}
-              </div>
+              <>
+                {/* Show skeleton card when creating a new ask */}
+                {isCreatingAsk && <AskCardSkeleton />}
+
+                {asks.length > 0 ? (
+                  asks.map(ask => (
+                    <AskCard
+                      key={ask.id}
+                      ask={ask}
+                      userType={userType}
+                      userName={userName}
+                      onPlaceBid={handlePlaceBid}
+                      onAcceptBid={handleAcceptBid}
+                    />
+                  ))
+                ) : !isCreatingAsk ? (
+                  <div className="text-center py-12 text-gray-500">
+                    No asks available yet. {userType === 'soloist' && 'Create your first ask to get started!'}
+                  </div>
+                ) : null}
+              </>
             )}
           </TabsContent>
 
           {userType === 'soloist' && (
-            <TabsContent value="my-asks" className="space-y-4">
-              {myAsks.length > 0 ? (
-                myAsks.map(ask => (
-                  <AskCard
-                    key={ask.id}
-                    ask={ask}
-                    userType={userType}
-                    userName={userName}
-                    onPlaceBid={handlePlaceBid}
-                    onAcceptBid={handleAcceptBid}
-                  />
-                ))
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  No asks posted yet. Create your first ask to get started!
-                </div>
-              )}
-            </TabsContent>
+            <>
+              <TabsContent value="my-asks" className="space-y-4">
+                {/* Show skeleton card when creating a new ask */}
+                {isCreatingAsk && <AskCardSkeleton />}
+
+                {myAsks.length > 0 ? (
+                  myAsks.map(ask => (
+                    <AskCard
+                      key={ask.id}
+                      ask={ask}
+                      userType={userType}
+                      userName={userName}
+                      onPlaceBid={handlePlaceBid}
+                      onAcceptBid={handleAcceptBid}
+                    />
+                  ))
+                ) : !isCreatingAsk ? (
+                  <div className="text-center py-12 text-gray-500">
+                    No asks posted yet. Create your first ask to get started!
+                  </div>
+                ) : null}
+              </TabsContent>
+
+              <TabsContent value="my-contacts" className="space-y-4">
+                {isLoadingContacts ? (
+                  <div className="text-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading contacts...</p>
+                  </div>
+                ) : contactReveals.length > 0 ? (
+                  contactReveals.map(contact => {
+                    // Find the corresponding ask for this contact
+                    const ask = asks.find(a => a.id === contact.ask_id);
+                    const bid = ask?.bids.find(b => b.id === contact.bid_id);
+
+                    return (
+                      <ContactCard
+                        key={contact.id}
+                        contact={contact}
+                        askDetails={ask ? {
+                          instrument: ask.instrument,
+                          pieces: ask.pieces,
+                          dateType: ask.dateType,
+                          date: ask.date,
+                          startDate: ask.startDate,
+                          endDate: ask.endDate,
+                          semester: ask.semester,
+                        } : undefined}
+                        bidAmount={bid?.amount}
+                      />
+                    );
+                  })
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    No accepted bids yet. When you accept a bid, pianist contact information will appear here.
+                  </div>
+                )}
+              </TabsContent>
+            </>
           )}
 
           {userType === 'pianist' && (
