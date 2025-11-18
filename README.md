@@ -1,11 +1,7 @@
+Basic VirtuoNext Implementation!
 
-  # Login Screen and Marketplace
-
-  This is a code bundle for Login Screen and Marketplace. The original project is available at https://www.figma.com/design/sDMJuETuCnpj3a6ns2egYM/Login-Screen-and-Marketplace.
-
-  ## Running the code
-
-  Run `npm i` to install the dependencies.
-
-  Run `npm run dev` to start the development server.
-  
+- Created a basic working main layout with bids and asks
+- Implemented sidebar for user profile (only exists for soloists currently)
+- Users can sign up with email, and upload a profile picture
+- soloists can post asks
+- pianists can post bids
