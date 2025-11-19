@@ -36,6 +36,7 @@ export interface Ask {
   description: string;
   auctionEndTime?: string;
   auctionStatus?: 'active' | 'completed' | 'expired';
+  archivedAt?: string;
   createdAt: string;
   bids: Bid[];
 }
@@ -98,6 +99,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
         description: ask.description,
         auctionEndTime: ask.auction_end_time,
         auctionStatus: ask.auction_status as 'active' | 'completed' | 'expired' | undefined,
+        archivedAt: ask.archived_at,
         createdAt: ask.created_at,
         bids: (bidsData || [])
           .filter(bid => bid.ask_id === ask.id)
@@ -298,9 +300,28 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
     }
   };
 
-  const myAsks = asks.filter(ask => ask.soloistName === userName);
-  const myBids = asks.filter(ask => 
-    ask.bids.some(bid => bid.pianistName === userName)
+  const handleArchiveAsk = async (askId: string) => {
+    try {
+      const { error } = await supabase
+        .from('asks')
+        .update({ archived_at: new Date().toISOString() })
+        .eq('id', askId);
+
+      if (error) throw error;
+
+      // Manually refetch to update UI immediately
+      await fetchAsks();
+    } catch (error) {
+      console.error('Error archiving ask:', error);
+      alert('Failed to delete ask. Please try again.');
+    }
+  };
+
+  // Filter for different views
+  const activeAsks = asks.filter(ask => !ask.archivedAt); // Only non-archived for "All" view
+  const myAsks = asks.filter(ask => ask.soloistName === userName); // All asks (including archived) for Activity
+  const myBids = asks.filter(ask =>
+    ask.bids.some(bid => bid.pianistName === userName) // All asks with user's bids (including archived)
   );
 
   return (
@@ -375,7 +396,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
               {userType === 'soloist' && (
                 <Button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="bg-black hover:bg-gray-800 text-white border-0 font-semibold"
+                  className="!bg-black hover:!bg-gray-800 !text-white !border-0 font-semibold shadow-lg"
                   size="sm"
                 >
                   <Plus className="size-4 mr-2" />
@@ -422,8 +443,8 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 {/* Show skeleton card when creating a new ask */}
                 {isCreatingAsk && <AskCardSkeleton />}
 
-                {asks.length > 0 ? (
-                  asks.map(ask => (
+                {activeAsks.length > 0 ? (
+                  activeAsks.map(ask => (
                     <AskCard
                       key={ask.id}
                       ask={ask}
@@ -431,6 +452,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                       userName={userName}
                       onPlaceBid={handlePlaceBid}
                       onAcceptBid={handleAcceptBid}
+                      onArchiveAsk={handleArchiveAsk}
                     />
                   ))
                 ) : !isCreatingAsk ? (
@@ -458,6 +480,8 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                       userName={userName}
                       onPlaceBid={handlePlaceBid}
                       onAcceptBid={handleAcceptBid}
+                      onArchiveAsk={handleArchiveAsk}
+                      isActivityView={true}
                     />
                   ))
                 ) : !isCreatingAsk ? (
@@ -519,6 +543,8 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                     userName={userName}
                     onPlaceBid={handlePlaceBid}
                     onAcceptBid={handleAcceptBid}
+                    onArchiveAsk={handleArchiveAsk}
+                    isActivityView={true}
                   />
                 ))
               ) : (

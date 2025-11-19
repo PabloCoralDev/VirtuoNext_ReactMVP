@@ -4,9 +4,9 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { Music2 } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 import type { UserProfile } from '../types/profile';
+import virtuoNextLogo from '../ui_elements/VirtuoNext Logo.png';
 
 interface LoginScreenProps {
   onAuthSuccess: (profile: UserProfile) => void;
@@ -15,6 +15,8 @@ interface LoginScreenProps {
 export function LoginScreen({ onAuthSuccess }: LoginScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showResendConfirmation, setShowResendConfirmation] = useState(false);
 
   // Login form state
   const [loginEmail, setLoginEmail] = useState('');
@@ -30,6 +32,7 @@ export function LoginScreen({ onAuthSuccess }: LoginScreenProps) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -38,7 +41,14 @@ export function LoginScreen({ onAuthSuccess }: LoginScreenProps) {
       });
 
       if (signInError) {
-        throw signInError;
+        // Check if it's an email confirmation error
+        if (signInError.message.includes('Email not confirmed') || signInError.message.includes('confirm')) {
+          setShowResendConfirmation(true);
+          setError('Email not confirmed. Please check your email or click below to resend confirmation.');
+        } else {
+          throw signInError;
+        }
+        return;
       }
 
       if (!data.user) {
@@ -68,6 +78,7 @@ export function LoginScreen({ onAuthSuccess }: LoginScreenProps) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
@@ -89,6 +100,19 @@ export function LoginScreen({ onAuthSuccess }: LoginScreenProps) {
         throw new Error('No user data returned');
       }
 
+      // Check if email confirmation is required
+      if (!data.session && data.user.identities && data.user.identities.length === 0) {
+        setSuccessMessage('Account created! Please check your email to confirm your account before logging in.');
+        setShowResendConfirmation(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // Verify session was created
+      if (!data.session) {
+        throw new Error('No session created. Please try logging in.');
+      }
+
       // Create profile
       const profile: UserProfile = {
         id: data.user.id,
@@ -108,14 +132,48 @@ export function LoginScreen({ onAuthSuccess }: LoginScreenProps) {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    setIsLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    try {
+      // Use the email from login or signup form
+      const email = loginEmail || signupEmail;
+
+      if (!email) {
+        setError('Please enter your email address');
+        return;
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+
+      if (error) throw error;
+
+      setSuccessMessage('Confirmation email sent! Please check your inbox.');
+      setShowResendConfirmation(false);
+    } catch (err) {
+      console.error('Error resending confirmation:', err);
+      const message = err instanceof Error ? err.message : 'Failed to resend confirmation email. Please try again.';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-50 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-red-600 rounded-full p-3">
-              <Music2 className="size-8 text-white" />
-            </div>
+            <img
+              src={virtuoNextLogo}
+              alt="VirtuoNext"
+              className="h-12 w-12"
+            />
           </div>
           <CardTitle className="text-3xl">VirtuoNext</CardTitle>
           <CardDescription>
@@ -236,6 +294,25 @@ export function LoginScreen({ onAuthSuccess }: LoginScreenProps) {
           {error && (
             <div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200">
               <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mt-4 p-3 rounded-lg bg-green-50 border border-green-200">
+              <p className="text-sm text-green-600">{successMessage}</p>
+            </div>
+          )}
+
+          {showResendConfirmation && (
+            <div className="mt-4">
+              <Button
+                onClick={handleResendConfirmation}
+                variant="outline"
+                className="w-full"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Sending...' : 'Resend Confirmation Email'}
+              </Button>
             </div>
           )}
         </CardContent>

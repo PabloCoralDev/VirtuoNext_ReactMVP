@@ -15,9 +15,11 @@ interface AskCardProps {
   userName: string;
   onPlaceBid: (askId: string, bid: Omit<Bid, 'id' | 'status'>) => void;
   onAcceptBid: (askId: string, bidId: string) => void;
+  onArchiveAsk: (askId: string) => void;
+  isActivityView?: boolean;
 }
 
-export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid }: AskCardProps) {
+export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onArchiveAsk, isActivityView = false }: AskCardProps) {
   const [isBidModalOpen, setIsBidModalOpen] = useState(false);
   const [showBids, setShowBids] = useState(false);
   const [acceptDialogOpen, setAcceptDialogOpen] = useState(false);
@@ -119,20 +121,26 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid }: As
             </div>
           </div>
 
-          {/* Auction Timer */}
-          {ask.auctionEndTime && ask.auctionStatus === 'active' && (
+          {/* Auction Timer - only show for active, non-archived auctions in main view */}
+          {ask.auctionEndTime && ask.auctionStatus === 'active' && !ask.archivedAt && !isActivityView && (
             <div className="pt-3 border-t">
               <AuctionTimer auctionEndTime={ask.auctionEndTime} />
             </div>
           )}
 
-          {ask.auctionStatus === 'completed' && (
+          {ask.archivedAt && (
+            <div className="pt-3 border-t">
+              <Badge variant="secondary" className="bg-gray-400 text-white">Deleted</Badge>
+            </div>
+          )}
+
+          {!ask.archivedAt && ask.auctionStatus === 'completed' && (
             <div className="pt-3 border-t">
               <Badge variant="default" className="bg-green-600">Auction Complete</Badge>
             </div>
           )}
 
-          {(isAuctionExpired || ask.auctionStatus === 'expired') && ask.auctionStatus !== 'completed' && (
+          {!ask.archivedAt && (isAuctionExpired || ask.auctionStatus === 'expired') && ask.auctionStatus !== 'completed' && (
             <div className="pt-3 border-t">
               <Badge variant="destructive">Auction Expired</Badge>
             </div>
@@ -219,7 +227,7 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid }: As
                           </div>
                         </div>
                       </div>
-                      {isMyAsk && bid.status === 'pending' && !hasAcceptedBid && (
+                      {isMyAsk && bid.status === 'pending' && !hasAcceptedBid && !isActivityView && (
                         <Button
                           size="sm"
                           onClick={() => handleAcceptClick(bid.id, bid.amount, bid.pianistName)}
@@ -236,42 +244,54 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid }: As
             </div>
           )}
 
-          {myBid && (
+          {userType === 'pianist' && myBid && (
             <div className="pt-2 border-t">
               <div className="flex items-center gap-2">
-                <Badge variant={
-                  myBid.status === 'accepted' ? 'default' : 
-                  myBid.status === 'rejected' ? 'secondary' : 
-                  'outline'
-                }>
-                  Your bid: ${myBid.amount}
-                </Badge>
+                <span className="text-sm text-gray-700">Your bid: ${myBid.amount}</span>
                 {myBid.status === 'accepted' && (
-                  <span className="text-sm text-green-600">✓ Accepted</span>
+                  <Badge className="bg-green-100 text-green-700 border-green-200">
+                    Accepted
+                  </Badge>
                 )}
                 {myBid.status === 'pending' && (
-                  <span className="text-sm text-gray-600">Pending</span>
+                  <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                    Pending
+                  </Badge>
+                )}
+                {myBid.status === 'rejected' && (
+                  <Badge className="bg-red-100 text-red-700 border-red-200">
+                    Canceled
+                  </Badge>
                 )}
               </div>
             </div>
           )}
         </CardContent>
 
-        <CardFooter>
-          {userType === 'pianist' && !isMyAsk && !myBid && !hasAcceptedBid && !isAuctionExpired && ask.auctionStatus !== 'expired' && ask.auctionStatus !== 'completed' && (
+        <CardFooter className="flex gap-2">
+          {userType === 'pianist' && !isMyAsk && !myBid && !hasAcceptedBid && !isAuctionExpired && ask.auctionStatus !== 'expired' && ask.auctionStatus !== 'completed' && !isActivityView && (
             <Button onClick={() => setIsBidModalOpen(true)} className="w-full">
               Place Bid
             </Button>
           )}
-          {(isAuctionExpired || ask.auctionStatus === 'expired') && !hasAcceptedBid && ask.auctionStatus !== 'completed' && (
+          {(isAuctionExpired || ask.auctionStatus === 'expired') && !hasAcceptedBid && ask.auctionStatus !== 'completed' && !isMyAsk && !isActivityView && (
             <div className="w-full text-center text-sm text-gray-600">
               Bidding has ended
             </div>
           )}
-          {hasAcceptedBid && !isMyAsk && !myBid && (
+          {hasAcceptedBid && !isMyAsk && !myBid && !isActivityView && (
             <div className="w-full text-center text-sm text-gray-600">
               This opportunity has been filled
             </div>
+          )}
+          {userType === 'soloist' && isMyAsk && !ask.archivedAt && hasAcceptedBid && ask.auctionStatus === 'completed' && (
+            <Button
+              onClick={() => onArchiveAsk(ask.id)}
+              variant="destructive"
+              className="w-full"
+            >
+              Delete Ask
+            </Button>
           )}
         </CardFooter>
       </Card>

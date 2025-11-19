@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Eye, TrendingUp, DollarSign, FileText, Settings } from 'lucide-react';
+import { Badge } from './ui/badge';
+import { Settings, FileText, TrendingUp, DollarSign } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 import type { Ask } from './Marketplace';
 
@@ -236,125 +236,117 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
       .toUpperCase();
   };
 
+  const getStatusBadge = (subtitle: string) => {
+    // Extract status from subtitle (format: "Name • status")
+    const parts = subtitle.split('•').map(p => p.trim());
+    if (parts.length < 2) return null;
+
+    const status = parts[1].toLowerCase();
+
+    const statusStyles = {
+      pending: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300',
+      accepted: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300',
+      canceled: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300',
+    };
+
+    const style = statusStyles[status as keyof typeof statusStyles];
+    if (!style) return null;
+
+    return { status, style };
+  };
+
   return (
-    <div className="w-64 flex-shrink-0 space-y-4 sticky top-20 self-start">
+    <div className="w-28 flex-shrink-0 space-y-3 sticky top-20 self-start">
       {/* Profile Card */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col items-center text-center space-y-3">
-            <Avatar className="size-20">
+      <Card className="h-fit">
+        <CardContent className="pt-4 pb-4 px-4">
+          <div className="flex flex-col items-center text-center space-y-2">
+            <Avatar className="size-9">
               <AvatarImage src={profile.picture_url || undefined} alt={userName} />
-              <AvatarFallback className="text-lg">{getInitials(userName)}</AvatarFallback>
+              <AvatarFallback className="text-[9px]">{getInitials(userName)}</AvatarFallback>
             </Avatar>
-            <div className="space-y-1 w-full">
-              <h3 className="font-semibold text-sm">{userName}</h3>
-              <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-              <Badge variant="secondary" className="text-xs">
-                {userType}
-              </Badge>
+            <div className="w-full space-y-0.5">
+              <h3 className="font-semibold text-[8px] leading-tight truncate">{userName}</h3>
+              <p className="text-[7px] text-muted-foreground truncate leading-tight">{userEmail}</p>
             </div>
-            <p className="text-xs text-muted-foreground italic w-full">
-              {truncateBio(profile.bio)}
-            </p>
             <Button
               variant="outline"
               size="sm"
-              className="w-full mt-2"
+              className="w-full h-5 text-[7px] px-1.5 mt-1"
               onClick={onEditProfile}
             >
-              <Settings className="size-3 mr-2" />
-              Edit Profile
+              <Settings className="size-2 mr-0.5" />
+              Edit
             </Button>
           </div>
         </CardContent>
       </Card>
 
       {/* Metrics Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">Your Stats</CardTitle>
+      <Card className="h-fit">
+        <CardHeader className="pb-1.5 pt-3.5 px-3">
+          <CardTitle className="text-[9px] font-bold">Stats</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-1 px-3 pb-2.5">
           {isLoading ? (
-            <div className="text-center py-4">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-red-600 mx-auto"></div>
+            <div className="text-center py-1">
+              <div className="animate-spin rounded-full h-3 w-3 border border-red-600 border-t-transparent mx-auto"></div>
             </div>
           ) : (
             <>
-              {/* Profile Views */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Eye className="size-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Profile Views</span>
-                </div>
-                <span className="text-sm font-semibold">{metrics.profileViews}</span>
-              </div>
-
               {userType === 'soloist' ? (
                 <>
-                  {/* Total Asks */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="size-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Total Asks</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5">
+                      <FileText className="size-2 text-muted-foreground" />
+                      <span className="text-[6px] text-muted-foreground">Asks</span>
                     </div>
-                    <span className="text-sm font-semibold">{metrics.totalAsks}</span>
+                    <span className="text-[7px] font-semibold">{metrics.totalAsks}</span>
                   </div>
-
-                  {/* Total Bids on Asks */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="size-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Bids Received</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5">
+                      <TrendingUp className="size-2 text-muted-foreground" />
+                      <span className="text-[6px] text-muted-foreground">Bids</span>
                     </div>
-                    <span className="text-sm font-semibold">{metrics.totalBidsOnAsks}</span>
+                    <span className="text-[7px] font-semibold">{metrics.totalBidsOnAsks}</span>
                   </div>
-
-                  {/* Accepted Bids */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="size-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Accepted</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5">
+                      <DollarSign className="size-2 text-muted-foreground" />
+                      <span className="text-[6px] text-muted-foreground">Accepted</span>
                     </div>
-                    <span className="text-sm font-semibold">{metrics.acceptedBids}</span>
+                    <span className="text-[7px] font-semibold">{metrics.acceptedBids}</span>
                   </div>
-
-                  {/* Active Asks */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="size-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Active Asks</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5">
+                      <TrendingUp className="size-2 text-muted-foreground" />
+                      <span className="text-[6px] text-muted-foreground">Active</span>
                     </div>
-                    <span className="text-sm font-semibold">{metrics.activeAsks}</span>
+                    <span className="text-[7px] font-semibold">{metrics.activeAsks}</span>
                   </div>
                 </>
               ) : (
                 <>
-                  {/* Total Bids Done */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="size-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Total Bids</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5">
+                      <TrendingUp className="size-2 text-muted-foreground" />
+                      <span className="text-[6px] text-muted-foreground">Bids</span>
                     </div>
-                    <span className="text-sm font-semibold">{metrics.totalBidsDone}</span>
+                    <span className="text-[7px] font-semibold">{metrics.totalBidsDone}</span>
                   </div>
-
-                  {/* Accepted Bids */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="size-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Accepted</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5">
+                      <DollarSign className="size-2 text-muted-foreground" />
+                      <span className="text-[6px] text-muted-foreground">Accepted</span>
                     </div>
-                    <span className="text-sm font-semibold">{metrics.acceptedBids}</span>
+                    <span className="text-[7px] font-semibold">{metrics.acceptedBids}</span>
                   </div>
-
-                  {/* Success Rate */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <TrendingUp className="size-4 text-muted-foreground" />
-                      <span className="text-xs text-muted-foreground">Success Rate</span>
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-0.5">
+                      <TrendingUp className="size-2 text-muted-foreground" />
+                      <span className="text-[6px] text-muted-foreground">Rate</span>
                     </div>
-                    <span className="text-sm font-semibold">
+                    <span className="text-[7px] font-semibold">
                       {metrics.totalBidsDone > 0
                         ? Math.round((metrics.acceptedBids / metrics.totalBidsDone) * 100)
                         : 0}%
@@ -368,29 +360,40 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
       </Card>
 
       {/* Recent Activity Card */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-semibold">
-            {userType === 'soloist' ? 'Your Asks' : 'Your Bids'}
-          </CardTitle>
+      <Card className="h-fit max-h-[280px]">
+        <CardHeader className="pb-1.5 pt-3.5 px-3">
+          <CardTitle className="text-[9px] font-bold">Recent</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-3 pb-2.5 overflow-y-auto max-h-[240px]">
           {recentActivity.length > 0 ? (
-            <div className="space-y-3">
-              {recentActivity.map(activity => (
-                <div key={activity.id} className="border-l-2 border-muted pl-3 py-1">
-                  <p className="text-xs font-medium leading-tight">{activity.title}</p>
-                  <p className="text-xs text-muted-foreground leading-tight mt-0.5">
-                    {activity.subtitle}
-                  </p>
-                </div>
-              ))}
+            <div className="space-y-1.5">
+              {recentActivity.slice(0, 6).map(activity => {
+                const statusBadge = getStatusBadge(activity.subtitle);
+                // If status badge exists, remove it from subtitle display
+                const displaySubtitle = statusBadge
+                  ? activity.subtitle.split('•')[0].trim()
+                  : activity.subtitle;
+
+                return (
+                  <div key={activity.id} className="border-l border-muted pl-1.5 py-0.5">
+                    <p className="text-[6px] font-medium leading-tight line-clamp-1">{activity.title}</p>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <p className="text-[5px] text-muted-foreground leading-tight line-clamp-1">
+                        {displaySubtitle}
+                      </p>
+                      {statusBadge && (
+                        <Badge className={`text-[5px] px-1 py-0 h-3 ${statusBadge.style}`}>
+                          {statusBadge.status}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              {userType === 'soloist'
-                ? 'No asks posted yet'
-                : 'No bids placed yet'}
+            <p className="text-[6px] text-muted-foreground text-center py-2">
+              None yet
             </p>
           )}
         </CardContent>
