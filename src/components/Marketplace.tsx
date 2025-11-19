@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { AskCard } from './AskCard';
 import { AskCardSkeleton } from './AskCardSkeleton';
 import { CreateAskModal } from './CreateAskModal';
 import { ProfileSidebar } from './ProfileSidebar';
 import { ContactCard } from './ContactCard';
-import { LogOut, Plus } from 'lucide-react';
+import { LogOut, Plus, Search, TrendingUp, Users, Music } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 import type { ContactReveal } from '@/types/auction';
+import virtuoNextLogo from '../ui_elements/VirtuoNext Logo.png';
 
 interface MarketplaceProps {
   userId: string;
@@ -55,6 +55,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
   const [isCreatingAsk, setIsCreatingAsk] = useState(false);
   const [contactReveals, setContactReveals] = useState<ContactReveal[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
 
   // Fetch asks with their bids
   const fetchAsks = async (showLoading = false) => {
@@ -304,18 +305,94 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl">VirtuoNext</h1>
-            <p className="text-sm text-gray-600">
-              Welcome, {userName} ({userType})
-            </p>
+      <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 py-3">
+          <div className="flex items-center justify-between">
+            {/* Left: Logo & Brand */}
+            <button
+              onClick={() => setActiveTab('all')}
+              className="flex items-center gap-3 group"
+            >
+              <img
+                src={virtuoNextLogo}
+                alt="VirtuoNext"
+                className="h-12 w-12 transition-transform group-hover:scale-105"
+              />
+              <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-red-600 group-hover:from-amber-400 group-hover:via-amber-500 group-hover:to-red-500 transition-all">
+                VirtuoNext
+              </span>
+            </button>
+
+            {/* Right: Navigation, Post Ask Button & Logout */}
+            <div className="flex items-center gap-4">
+              {/* LinkedIn-style Navigation */}
+              <nav className="flex gap-2">
+                {/* Asks/Bids */}
+                <button
+                  onClick={() => setActiveTab('all')}
+                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                    activeTab === 'all'
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/50'
+                      : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Search className="size-5" />
+                  <span className="text-xs font-semibold">
+                    {userType === 'soloist' ? 'Asks' : 'Bids'}
+                  </span>
+                </button>
+
+                {/* Activity (My Asks/My Bids) */}
+                <button
+                  onClick={() => setActiveTab(userType === 'soloist' ? 'my-asks' : 'my-bids')}
+                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                    activeTab === 'my-asks' || activeTab === 'my-bids'
+                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/50'
+                      : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <TrendingUp className="size-5" />
+                  <span className="text-xs font-semibold">Activity</span>
+                </button>
+
+                {/* Contacts (Soloists only) */}
+                {userType === 'soloist' && (
+                  <button
+                    onClick={() => setActiveTab('my-contacts')}
+                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                      activeTab === 'my-contacts'
+                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/50'
+                        : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Users className="size-5" />
+                    <span className="text-xs font-semibold">Contacts</span>
+                  </button>
+                )}
+              </nav>
+
+              {/* Post Ask Button */}
+              {userType === 'soloist' && (
+                <Button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-black hover:bg-gray-800 text-white border-0 font-semibold"
+                  size="sm"
+                >
+                  <Plus className="size-4 mr-2" />
+                  Post Ask
+                </Button>
+              )}
+
+              {/* Logout Icon */}
+              <button
+                onClick={onLogout}
+                className="p-2.5 rounded-lg text-gray-600 hover:text-red-600 hover:bg-gray-50 transition-all"
+                title="Logout"
+              >
+                <LogOut className="size-5" />
+              </button>
+            </div>
           </div>
-          <Button variant="outline" onClick={onLogout}>
-            <LogOut className="size-4 mr-2" />
-            Logout
-          </Button>
         </div>
       </header>
 
@@ -331,29 +408,10 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
           />
 
           {/* Main Content Area */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-2xl">Marketplace</h2>
-                <p className="text-gray-600">Browse opportunities and place bids</p>
-              </div>
-              {userType === 'soloist' && (
-                <Button onClick={() => setIsCreateModalOpen(true)}>
-                  <Plus className="size-4 mr-2" />
-                  Post Ask
-                </Button>
-              )}
-            </div>
-
-            <Tabs defaultValue="all" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="all">All Asks</TabsTrigger>
-            {userType === 'soloist' && <TabsTrigger value="my-asks">My Asks</TabsTrigger>}
-            {userType === 'soloist' && <TabsTrigger value="my-contacts">My Contacts</TabsTrigger>}
-            {userType === 'pianist' && <TabsTrigger value="my-bids">My Bids</TabsTrigger>}
-          </TabsList>
-
-          <TabsContent value="all" className="space-y-4">
+          <div className="flex-1 min-w-0 space-y-6">
+          {/* All Asks/Bids Tab */}
+          {activeTab === 'all' && (
+            <div className="space-y-4">
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
@@ -382,11 +440,12 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 ) : null}
               </>
             )}
-          </TabsContent>
+            </div>
+          )}
 
-          {userType === 'soloist' && (
-            <>
-              <TabsContent value="my-asks" className="space-y-4">
+          {/* My Asks Tab (Soloist only) */}
+          {activeTab === 'my-asks' && userType === 'soloist' && (
+            <div className="space-y-4">
                 {/* Show skeleton card when creating a new ask */}
                 {isCreatingAsk && <AskCardSkeleton />}
 
@@ -406,9 +465,12 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                     No asks posted yet. Create your first ask to get started!
                   </div>
                 ) : null}
-              </TabsContent>
+            </div>
+          )}
 
-              <TabsContent value="my-contacts" className="space-y-4">
+          {/* My Contacts Tab (Soloist only) */}
+          {activeTab === 'my-contacts' && userType === 'soloist' && (
+            <div className="space-y-4">
                 {isLoadingContacts ? (
                   <div className="text-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
@@ -442,12 +504,12 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                     No accepted bids yet. When you accept a bid, pianist contact information will appear here.
                   </div>
                 )}
-              </TabsContent>
-            </>
+            </div>
           )}
 
-          {userType === 'pianist' && (
-            <TabsContent value="my-bids" className="space-y-4">
+          {/* My Bids Tab (Pianist only) */}
+          {activeTab === 'my-bids' && userType === 'pianist' && (
+            <div className="space-y-4">
               {myBids.length > 0 ? (
                 myBids.map(ask => (
                   <AskCard
@@ -464,9 +526,8 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                   You haven't placed any bids yet. Browse asks and place your first bid!
                 </div>
               )}
-            </TabsContent>
+            </div>
           )}
-            </Tabs>
 
             <CreateAskModal
               isOpen={isCreateModalOpen}
