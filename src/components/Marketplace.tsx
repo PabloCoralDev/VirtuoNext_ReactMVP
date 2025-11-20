@@ -327,7 +327,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b sticky top-0 z-10 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-3">
+        <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             {/* Left: Logo & Brand */}
             <button
@@ -339,21 +339,31 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 alt="VirtuoNext"
                 className="h-12 w-12 transition-transform group-hover:scale-105"
               />
-              <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-red-600 group-hover:from-amber-400 group-hover:via-amber-500 group-hover:to-red-500 transition-all">
-                VirtuoNext
-              </span>
+              <div className="flex flex-col items-start -mt-1">
+                <span className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-red-600 group-hover:from-amber-400 group-hover:via-amber-500 group-hover:to-red-500 transition-all leading-none">
+                  VirtuoNext
+                </span>
+                <span className="text-xs text-gray-500 mt-0.5">
+                  Welcome, {userName.split(' ')[0]} ({userType === 'soloist' ? 'Soloist' : 'Pianist'})
+                </span>
+              </div>
             </button>
 
             {/* Right: Navigation, Post Ask Button & Logout */}
             <div className="flex items-center gap-4">
               {/* LinkedIn-style Navigation */}
-              <nav className="flex gap-2">
+              <nav className="flex gap-3">
                 {/* Asks/Bids */}
                 <button
                   onClick={() => setActiveTab('all')}
+                  style={
+                    activeTab === 'all'
+                      ? { background: '#fe440a' }
+                      : {}
+                  }
                   className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                     activeTab === 'all'
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/50'
+                      ? 'text-white shadow-lg'
                       : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
                   }`}
                 >
@@ -366,9 +376,14 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 {/* Activity (My Asks/My Bids) */}
                 <button
                   onClick={() => setActiveTab(userType === 'soloist' ? 'my-asks' : 'my-bids')}
+                  style={
+                    activeTab === 'my-asks' || activeTab === 'my-bids'
+                      ? { background: '#fe440a' }
+                      : {}
+                  }
                   className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                     activeTab === 'my-asks' || activeTab === 'my-bids'
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/50'
+                      ? 'text-white shadow-lg'
                       : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
                   }`}
                 >
@@ -380,9 +395,14 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 {userType === 'soloist' && (
                   <button
                     onClick={() => setActiveTab('my-contacts')}
+                    style={
+                      activeTab === 'my-contacts'
+                        ? { background: '#fe440a' }
+                        : {}
+                    }
                     className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
                       activeTab === 'my-contacts'
-                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/50'
+                        ? 'text-white shadow-lg'
                         : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
                     }`}
                   >

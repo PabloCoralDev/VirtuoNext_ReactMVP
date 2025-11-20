@@ -244,9 +244,9 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
     const status = parts[1].toLowerCase();
 
     const statusStyles = {
-      pending: 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900 dark:text-amber-300',
-      accepted: 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-300',
-      canceled: 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900 dark:text-red-300',
+      pending: 'bg-amber-500 text-white shadow-lg shadow-amber-500/50',
+      accepted: 'bg-green-600 text-white shadow-lg shadow-green-600/50',
+      canceled: 'bg-red-600 text-white shadow-lg shadow-red-600/50',
     };
 
     const style = statusStyles[status as keyof typeof statusStyles];
@@ -382,7 +382,7 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
                         {displaySubtitle}
                       </p>
                       {statusBadge && (
-                        <Badge className={`text-[5px] px-1 py-0 h-3 ${statusBadge.style}`}>
+                        <Badge className={`text-[7px] px-1.5 py-0.5 ${statusBadge.style}`}>
                           {statusBadge.status}
                         </Badge>
                       )}

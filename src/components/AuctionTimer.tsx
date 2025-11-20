@@ -60,7 +60,7 @@ export function AuctionTimer({ auctionEndTime, onExpire, compact = false }: Auct
 
   if (timeLeft.isExpired) {
     return (
-      <div className="flex items-center gap-2 text-red-600 dark:text-red-400 font-medium">
+      <div className="flex items-center gap-2 text-white font-bold">
         <AlertCircle className="w-4 h-4" />
         <span>Auction Ended</span>
       </div>
@@ -72,19 +72,19 @@ export function AuctionTimer({ auctionEndTime, onExpire, compact = false }: Auct
     const totalHours = timeLeft.days * 24 + timeLeft.hours;
     return (
       <div className="flex items-center gap-2">
-        <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-        <div className="font-medium">
+        <Clock className="w-4 h-4 text-white" />
+        <div className="font-bold text-white">
           {timeLeft.days > 0 && (
-            <span className="text-blue-600 dark:text-blue-400">
+            <span>
               {timeLeft.days}d {timeLeft.hours}h
             </span>
           )}
           {timeLeft.days === 0 && (
-            <span className="text-blue-600 dark:text-blue-400">
+            <span>
               {totalHours}h {timeLeft.minutes}m
             </span>
           )}
-          {!compact && <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">left</span>}
+          {!compact && <span className="text-white text-sm ml-1">left</span>}
         </div>
       </div>
     );
@@ -100,26 +100,12 @@ export function AuctionTimer({ auctionEndTime, onExpire, compact = false }: Auct
 
   return (
     <div className="flex items-center gap-2">
-      <Clock
-        className={`w-4 h-4 ${
-          isLastMinute
-            ? 'text-red-600 dark:text-red-400 animate-pulse'
-            : isUrgent
-            ? 'text-orange-600 dark:text-orange-400'
-            : 'text-blue-600 dark:text-blue-400'
-        }`}
-      />
-      <div className={`font-mono font-bold ${
-        isLastMinute
-          ? 'text-red-600 dark:text-red-400'
-          : isUrgent
-          ? 'text-orange-600 dark:text-orange-400'
-          : 'text-blue-600 dark:text-blue-400'
-      }`}>
+      <Clock className={`w-4 h-4 text-white ${isLastMinute ? 'animate-pulse' : ''}`} />
+      <div className="font-mono font-bold text-white">
         {hoursStr}:{minutesStr}:{secondsStr}
       </div>
       {!compact && (
-        <span className="text-gray-500 dark:text-gray-400 text-sm">
+        <span className="text-white text-sm font-bold">
           {isLastMinute ? 'FINAL MINUTE!' : isUrgent ? 'ending soon' : 'left'}
         </span>
       )}
