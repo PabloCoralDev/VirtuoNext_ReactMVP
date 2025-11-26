@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Settings, FileText, TrendingUp, DollarSign } from 'lucide-react';
+import { Settings, FileText, TrendingUp, DollarSign, CreditCard } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 import type { Ask } from './Marketplace';
 
@@ -18,6 +18,13 @@ interface ProfileSidebarProps {
 interface ProfileData {
   bio: string | null;
   picture_url: string | null;
+}
+
+interface StripeData {
+  accountId: string | null;
+  onboardingComplete: boolean;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
 }
 
 interface Metrics {
@@ -47,11 +54,20 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
   });
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [stripeData, setStripeData] = useState<StripeData>({
+    accountId: null,
+    onboardingComplete: false,
+    chargesEnabled: false,
+    payoutsEnabled: false,
+  });
 
   useEffect(() => {
     fetchProfileData();
     fetchMetrics();
     fetchRecentActivity();
+    if (userType === 'pianist') {
+      fetchStripeData();
+    }
 
     // Track profile view
     trackProfileView();
@@ -165,6 +181,32 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
     }
   };
 
+  const fetchStripeData = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('stripe_account_id, stripe_onboarding_complete, stripe_charges_enabled, stripe_payouts_enabled')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching Stripe data:', error);
+        return;
+      }
+
+      if (data) {
+        setStripeData({
+          accountId: data.stripe_account_id,
+          onboardingComplete: data.stripe_onboarding_complete || false,
+          chargesEnabled: data.stripe_charges_enabled || false,
+          payoutsEnabled: data.stripe_payouts_enabled || false,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching Stripe data:', error);
+    }
+  };
+
   const fetchRecentActivity = async () => {
     try {
       if (userType === 'soloist') {
@@ -176,13 +218,21 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
           .order('created_at', { ascending: false })
           .limit(5);
 
-        const activities: ActivityItem[] = (asksData || []).map(ask => ({
-          id: ask.id,
-          title: `${ask.instrument} - $${ask.cost}${ask.cost_type === 'hourly' ? '/hr' : '/piece'}`,
-          subtitle: ask.pieces && ask.pieces.length > 0
-            ? ask.pieces.slice(0, 2).join(', ') + (ask.pieces.length > 2 ? '...' : '')
-            : 'No pieces listed',
-        }));
+        const activities: ActivityItem[] = (asksData || []).map(ask => {
+          let subtitle = 'No pieces listed';
+          if (ask.pieces && ask.pieces.length > 0) {
+            const piecesText = ask.pieces.slice(0, 2).join(', ') + (ask.pieces.length > 2 ? '...' : '');
+            subtitle = piecesText.length > 30 ? piecesText.substring(0, 30) + '...' : piecesText;
+          }
+
+          const costSuffix = ask.cost_type === 'hourly' ? '/hr' : ask.cost_type === 'total' ? ' total' : '/piece';
+
+          return {
+            id: ask.id,
+            title: `${ask.instrument} - $${ask.cost}${costSuffix}`,
+            subtitle,
+          };
+        });
 
         setRecentActivity(activities);
       } else {
@@ -256,7 +306,7 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
   };
 
   return (
-    <div className="w-28 flex-shrink-0 space-y-3 sticky top-20 self-start">
+    <div className="w-48 flex-shrink-0 space-y-3 sticky top-20 self-start overflow-hidden">
       {/* Profile Card */}
       <Card className="h-fit">
         <CardContent className="pt-4 pb-4 px-4">
@@ -290,63 +340,63 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
         <CardContent className="space-y-1 px-3 pb-2.5">
           {isLoading ? (
             <div className="text-center py-1">
-              <div className="animate-spin rounded-full h-3 w-3 border border-red-600 border-t-transparent mx-auto"></div>
+              <div className="animate-spin rounded-full h-5 w-5 border-[3px] border-red-600 border-t-transparent mx-auto"></div>
             </div>
           ) : (
             <>
               {userType === 'soloist' ? (
                 <>
                   <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-0.5">
-                      <FileText className="size-2 text-muted-foreground" />
-                      <span className="text-[6px] text-muted-foreground">Asks</span>
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1">
+                      <FileText className="size-2 text-muted-foreground flex-shrink-0" />
+                      <span className="text-[6px] text-muted-foreground truncate">Asks</span>
                     </div>
-                    <span className="text-[7px] font-semibold">{metrics.totalAsks}</span>
+                    <span className="text-[7px] font-semibold flex-shrink-0">{metrics.totalAsks}</span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-0.5">
-                      <TrendingUp className="size-2 text-muted-foreground" />
-                      <span className="text-[6px] text-muted-foreground">Bids</span>
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1">
+                      <TrendingUp className="size-2 text-muted-foreground flex-shrink-0" />
+                      <span className="text-[6px] text-muted-foreground truncate">Bids</span>
                     </div>
-                    <span className="text-[7px] font-semibold">{metrics.totalBidsOnAsks}</span>
+                    <span className="text-[7px] font-semibold flex-shrink-0">{metrics.totalBidsOnAsks}</span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-0.5">
-                      <DollarSign className="size-2 text-muted-foreground" />
-                      <span className="text-[6px] text-muted-foreground">Accepted</span>
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1">
+                      <DollarSign className="size-2 text-muted-foreground flex-shrink-0" />
+                      <span className="text-[6px] text-muted-foreground truncate">Accepted</span>
                     </div>
-                    <span className="text-[7px] font-semibold">{metrics.acceptedBids}</span>
+                    <span className="text-[7px] font-semibold flex-shrink-0">{metrics.acceptedBids}</span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-0.5">
-                      <TrendingUp className="size-2 text-muted-foreground" />
-                      <span className="text-[6px] text-muted-foreground">Active</span>
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1">
+                      <TrendingUp className="size-2 text-muted-foreground flex-shrink-0" />
+                      <span className="text-[6px] text-muted-foreground truncate">Active</span>
                     </div>
-                    <span className="text-[7px] font-semibold">{metrics.activeAsks}</span>
+                    <span className="text-[7px] font-semibold flex-shrink-0">{metrics.activeAsks}</span>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-0.5">
-                      <TrendingUp className="size-2 text-muted-foreground" />
-                      <span className="text-[6px] text-muted-foreground">Bids</span>
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1">
+                      <TrendingUp className="size-2 text-muted-foreground flex-shrink-0" />
+                      <span className="text-[6px] text-muted-foreground truncate">Bids</span>
                     </div>
-                    <span className="text-[7px] font-semibold">{metrics.totalBidsDone}</span>
+                    <span className="text-[7px] font-semibold flex-shrink-0">{metrics.totalBidsDone}</span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-0.5">
-                      <DollarSign className="size-2 text-muted-foreground" />
-                      <span className="text-[6px] text-muted-foreground">Accepted</span>
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1">
+                      <DollarSign className="size-2 text-muted-foreground flex-shrink-0" />
+                      <span className="text-[6px] text-muted-foreground truncate">Accepted</span>
                     </div>
-                    <span className="text-[7px] font-semibold">{metrics.acceptedBids}</span>
+                    <span className="text-[7px] font-semibold flex-shrink-0">{metrics.acceptedBids}</span>
                   </div>
                   <div className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-0.5">
-                      <TrendingUp className="size-2 text-muted-foreground" />
-                      <span className="text-[6px] text-muted-foreground">Rate</span>
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1">
+                      <TrendingUp className="size-2 text-muted-foreground flex-shrink-0" />
+                      <span className="text-[6px] text-muted-foreground truncate">Rate</span>
                     </div>
-                    <span className="text-[7px] font-semibold">
+                    <span className="text-[7px] font-semibold flex-shrink-0">
                       {metrics.totalBidsDone > 0
                         ? Math.round((metrics.acceptedBids / metrics.totalBidsDone) * 100)
                         : 0}%
@@ -360,13 +410,13 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
       </Card>
 
       {/* Recent Activity Card */}
-      <Card className="h-fit max-h-[280px]">
+      <Card className="h-fit max-h-[280px] overflow-hidden w-full">
         <CardHeader className="pb-1.5 pt-3.5 px-3">
           <CardTitle className="text-[9px] font-bold">Recent</CardTitle>
         </CardHeader>
-        <CardContent className="px-3 pb-2.5 overflow-y-auto max-h-[240px]">
+        <CardContent className="px-3 pb-2.5 overflow-y-auto overflow-x-hidden max-h-[240px]">
           {recentActivity.length > 0 ? (
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 w-full">
               {recentActivity.slice(0, 6).map(activity => {
                 const statusBadge = getStatusBadge(activity.subtitle);
                 // If status badge exists, remove it from subtitle display
@@ -375,14 +425,14 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
                   : activity.subtitle;
 
                 return (
-                  <div key={activity.id} className="border-l border-muted pl-1.5 py-0.5">
-                    <p className="text-[6px] font-medium leading-tight line-clamp-1">{activity.title}</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <p className="text-[5px] text-muted-foreground leading-tight line-clamp-1">
+                  <div key={activity.id} className="border-l border-muted pl-1.5 py-0.5 min-w-0 w-full max-w-full">
+                    <p className="text-[6px] font-medium leading-tight truncate overflow-hidden w-full">{activity.title}</p>
+                    <div className="flex items-center gap-1 mt-0.5 min-w-0 w-full max-w-full">
+                      <p className="text-[5px] text-muted-foreground leading-tight truncate flex-1 min-w-0 overflow-hidden max-w-0">
                         {displaySubtitle}
                       </p>
                       {statusBadge && (
-                        <Badge className={`text-[7px] px-1.5 py-0.5 ${statusBadge.style}`}>
+                        <Badge className={`text-[7px] px-1.5 py-0.5 flex-shrink-0 ${statusBadge.style}`}>
                           {statusBadge.status}
                         </Badge>
                       )}
@@ -398,6 +448,50 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
           )}
         </CardContent>
       </Card>
+
+      {/* Stripe Status Card - Only for Pianists */}
+      {userType === 'pianist' && (
+        <Card className="h-fit">
+          <CardHeader className="pb-1.5 pt-3.5 px-3">
+            <CardTitle className="text-[9px] font-bold flex items-center gap-1">
+              <CreditCard className="size-2" />
+              Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 px-3 pb-2.5">
+            {!stripeData.accountId ? (
+              <div className="text-center py-1.5">
+                <p className="text-[6px] text-muted-foreground leading-tight mb-1">
+                  Not set up
+                </p>
+                <Badge variant="secondary" className="text-[6px] px-1.5 py-0.5">
+                  Setup Required
+                </Badge>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-1">
+                  <span className="text-[6px] text-muted-foreground">Status</span>
+                  <Badge
+                    variant={stripeData.onboardingComplete ? 'default' : 'secondary'}
+                    className="text-[6px] px-1.5 py-0.5"
+                  >
+                    {stripeData.onboardingComplete ? 'Active' : 'Pending'}
+                  </Badge>
+                </div>
+                {stripeData.chargesEnabled && stripeData.payoutsEnabled && (
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[6px] text-muted-foreground truncate">Ready</span>
+                    <Badge className="text-[6px] px-1.5 py-0.5 bg-green-600 flex-shrink-0">
+                      ✓
+                    </Badge>
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

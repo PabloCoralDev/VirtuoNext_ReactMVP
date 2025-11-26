@@ -2,8 +2,15 @@ import { Hono } from "npm:hono";
 import { cors } from "npm:hono/cors";
 import { logger } from "npm:hono/logger";
 import * as kv from "./kv_store.tsx";
+import Stripe from "npm:stripe@17.5.0";
 
 const app = new Hono();
+
+// Initialize Stripe with secret key from environment
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+  apiVersion: "2024-11-20.acacia",
+  httpClient: Stripe.createFetchHttpClient(),
+});
 
 const allowedUserTypes = ["soloist", "pianist"] as const;
 type UserType = typeof allowedUserTypes[number];
@@ -107,6 +114,109 @@ app.post("/login", async (c) => {
   } catch (error) {
     console.error("Error in login endpoint:", error);
     return c.json({ error: "Internal server error during login" }, 500);
+  }
+});
+
+// Create Stripe Connect Express Account for pianist
+app.post("/stripe/create-account", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { email, userId } = body ?? {};
+
+    if (!email || !userId) {
+      return c.json({ error: "Missing required fields: email and userId" }, 400);
+    }
+
+    // Create Stripe Connect Express account
+    const account = await stripe.accounts.create({
+      type: "express",
+      email: email,
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
+      },
+      business_type: "individual",
+      metadata: {
+        user_id: userId,
+      },
+    });
+
+    console.log(`Created Stripe account ${account.id} for user ${userId}`);
+
+    return c.json({
+      accountId: account.id,
+      detailsSubmitted: account.details_submitted,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+    });
+  } catch (error) {
+    console.error("Error creating Stripe account:", error);
+    return c.json(
+      { error: error instanceof Error ? error.message : "Failed to create Stripe account" },
+      500
+    );
+  }
+});
+
+// Generate Stripe Connect onboarding link
+app.post("/stripe/onboarding-link", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { accountId, refreshUrl, returnUrl } = body ?? {};
+
+    if (!accountId) {
+      return c.json({ error: "Missing required field: accountId" }, 400);
+    }
+
+    // Create account link for onboarding
+    const accountLink = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: refreshUrl || "http://localhost:5173/profile",
+      return_url: returnUrl || "http://localhost:5173/profile",
+      type: "account_onboarding",
+    });
+
+    console.log(`Generated onboarding link for account ${accountId}`);
+
+    return c.json({
+      url: accountLink.url,
+      expiresAt: accountLink.expires_at,
+    });
+  } catch (error) {
+    console.error("Error creating onboarding link:", error);
+    return c.json(
+      { error: error instanceof Error ? error.message : "Failed to create onboarding link" },
+      500
+    );
+  }
+});
+
+// Get Stripe account status
+app.post("/stripe/account-status", async (c) => {
+  try {
+    const body = await c.req.json();
+    const { accountId } = body ?? {};
+
+    if (!accountId) {
+      return c.json({ error: "Missing required field: accountId" }, 400);
+    }
+
+    // Retrieve account details
+    const account = await stripe.accounts.retrieve(accountId);
+
+    return c.json({
+      accountId: account.id,
+      detailsSubmitted: account.details_submitted,
+      chargesEnabled: account.charges_enabled,
+      payoutsEnabled: account.payouts_enabled,
+      email: account.email,
+    });
+  } catch (error) {
+    console.error("Error retrieving account status:", error);
+    return c.json(
+      { error: error instanceof Error ? error.message : "Failed to retrieve account status" },
+      500
+    );
   }
 });
 

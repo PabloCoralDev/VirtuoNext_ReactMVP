@@ -25,7 +25,7 @@ export interface Ask {
   instrument: string;
   pieces: string[];
   duration?: string;
-  costType: 'hourly' | 'per-piece';
+  costType: 'hourly' | 'per-piece' | 'total';
   cost: number;
   location: string;
   dateType: 'single' | 'range' | 'semester';
@@ -47,6 +47,7 @@ export interface Bid {
   amount: number;
   message: string;
   status: 'pending' | 'accepted' | 'rejected';
+  createdAt: string;
 }
 
 export function Marketplace({ userId, userType, userName, userEmail, onLogout, onEditProfile }: MarketplaceProps) {
@@ -88,7 +89,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
         instrument: ask.instrument,
         pieces: ask.pieces || [],
         duration: ask.duration,
-        costType: ask.cost_type as 'hourly' | 'per-piece',
+        costType: ask.cost_type as 'hourly' | 'per-piece' | 'total',
         cost: ask.cost,
         location: ask.location,
         dateType: ask.date_type as 'single' | 'range' | 'semester',
@@ -108,7 +109,8 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
             pianistName: bid.pianist_name,
             amount: bid.amount,
             message: bid.message,
-            status: bid.status as 'pending' | 'accepted' | 'rejected'
+            status: bid.status as 'pending' | 'accepted' | 'rejected',
+            createdAt: bid.created_at
           }))
       }));
 
@@ -216,7 +218,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
     }
   };
 
-  const handlePlaceBid = async (askId: string, bid: Omit<Bid, 'id' | 'status'>) => {
+  const handlePlaceBid = async (askId: string, bid: Omit<Bid, 'id' | 'status' | 'createdAt'>) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

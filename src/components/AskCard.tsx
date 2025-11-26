@@ -6,14 +6,14 @@ import { Avatar, AvatarFallback } from './ui/avatar';
 import { BidModal } from './BidModal';
 import { AuctionTimer } from './AuctionTimer';
 import { AcceptBidDialog } from './AcceptBidDialog';
-import { Calendar, MapPin, Music, Clock, DollarSign, ArrowUp, ChevronRight, ChevronDown } from 'lucide-react';
+import { Calendar, MapPin, Music, Clock, DollarSign, ArrowUp } from 'lucide-react';
 import type { Ask, Bid } from './Marketplace';
 
-interface AskCardProps {
+interface AskCardProps { 
   ask: Ask;
   userType: 'soloist' | 'pianist';
   userName: string;
-  onPlaceBid: (askId: string, bid: Omit<Bid, 'id' | 'status'>) => void;
+  onPlaceBid: (askId: string, bid: Omit<Bid, 'id' | 'status'| 'createdAt'>) => void;
   onAcceptBid: (askId: string, bidId: string) => void;
   onArchiveAsk: (askId: string) => void;
   isActivityView?: boolean;
@@ -76,7 +76,7 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
     onPlaceBid(ask.id, {
       pianistName: userName,
       amount,
-      message
+      message, 
     });
     setIsBidModalOpen(false);
   };
@@ -96,8 +96,8 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
 
   // Calculate bid statistics
   const pendingBids = ask.bids.filter(bid => bid.status === 'pending');
-  const highestBid = pendingBids.length > 0
-    ? Math.max(...pendingBids.map(bid => bid.amount))
+  const lowestBid = pendingBids.length > 0
+    ? Math.min(...pendingBids.map(bid => bid.amount))
     : null;
   const averageBid = pendingBids.length > 0
     ? Math.round(pendingBids.reduce((sum, bid) => sum + bid.amount, 0) / pendingBids.length)
@@ -119,8 +119,8 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
               </div>
             </div>
             <div className="text-right">
-              <Badge variant={ask.costType === 'hourly' ? 'default' : 'secondary'}>
-                {ask.costType === 'hourly' ? 'Hourly' : 'Per Piece'}
+              <Badge variant={ask.costType === 'hourly' ? 'default' : ask.costType === 'total' ? 'outline' : 'secondary'}>
+                {ask.costType === 'hourly' ? 'Hourly' : ask.costType === 'total' ? 'Total Fee' : 'Per Piece'}
               </Badge>
               <div className="mt-1">
                 <span className="text-2xl">${ask.cost}</span>
@@ -136,11 +136,11 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
             <div className="pt-4 mt-3">
               <div className="inline-flex items-center gap-4 rounded-lg px-3 py-2 shadow-md" style={{ backgroundColor: '#AAA9AD' }}>
                 <AuctionTimer auctionEndTime={ask.auctionEndTime} />
-                {highestBid !== null && (
+                {lowestBid !== null && (
                   <div className="flex items-center gap-2 text-white font-bold">
-                    <ArrowUp className="w-4 h-4" />
+                    <ArrowUp className="w-4 h-4" style={{ transform: 'rotate(180deg)' }} />
                     <span>Bid:</span>
-                    <span>${highestBid}</span>
+                    <span>${lowestBid}</span>
                   </div>
                 )}
               </div>
@@ -214,10 +214,10 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                     <span className="text-xs text-gray-600">Total Bids</span>
                     <span className="text-sm font-bold text-gray-900">{ask.bids.length}</span>
                   </div>
-                  {highestBid && (
+                  {lowestBid && (
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Highest Bid</span>
-                      <span className="text-sm font-bold text-green-600">${highestBid}</span>
+                      <span className="text-xs text-gray-600">Lowest Bid</span>
+                      <span className="text-sm font-bold text-green-600">${lowestBid}</span>
                     </div>
                   )}
                   {averageBid && (
@@ -248,7 +248,11 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                     .map(bid => {
                       // Check if this bid has been superseded by a newer bid from the same pianist
                       const bidsFromSamePianist = ask.bids.filter(b => b.pianistName === bid.pianistName);
-                      const sortedBids = [...bidsFromSamePianist].sort((a, b) => b.id.localeCompare(a.id));
+                      // Sort by timestamp to find the most recent bid
+                      const sortedBids = [...bidsFromSamePianist].sort((a, b) =>
+                        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                      );
+                      // If this bid is not the most recent from this pianist, it's superseded
                       const newerBidExists = sortedBids.length > 0 && sortedBids[0].id !== bid.id;
 
                       return { ...bid, newerBidExists };
@@ -258,8 +262,8 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                       if (a.newerBidExists !== b.newerBidExists) {
                         return a.newerBidExists ? 1 : -1;
                       }
-                      // Then sort by amount (highest first)
-                      return b.amount - a.amount;
+                      // Then sort by amount (lowest first - this is a reverse auction)
+                      return a.amount - b.amount;
                     })
                     .map(bid => {
                       const newerBidExists = bid.newerBidExists;
@@ -277,42 +281,45 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                             : 'bg-white border-gray-200'
                         }`}
                       >
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-start justify-between mb-2" style={newerBidExists ? { textDecoration: 'line-through' } : {}}>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className={newerBidExists ? 'line-through' : ''}>{bid.pianistName}</span>
+                              <span>{bid.pianistName}</span>
                               {bid.status === 'accepted' && (
-                                <Badge className="bg-green-600">Accepted</Badge>
+                                <Badge className="bg-green-600" style={{ textDecoration: 'none' }}>Accepted</Badge>
                               )}
                               {bid.status === 'rejected' && (
-                                <Badge variant="secondary">Not Selected</Badge>
+                                <Badge variant="secondary" style={{ textDecoration: 'none' }}>Not Selected</Badge>
                               )}
                               {newerBidExists && (
-                                <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
-                                  New Bid Placed
-                                </Badge>
+                                <span style={{ textDecoration: 'none' }}>
+                                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 border-blue-200">
+                                    New Bid Placed
+                                  </Badge>
+                                </span>
                               )}
                             </div>
-                            <p className={`text-sm text-gray-600 mt-1 ${newerBidExists ? 'line-through' : ''}`}>
+                            <p className="text-sm text-gray-600 mt-1">
                               {bid.message}
                             </p>
                           </div>
                           <div className="text-right">
-                            <div className={`flex items-center gap-1 ${newerBidExists ? 'line-through' : ''}`}>
+                            <div className="flex items-center gap-1">
                               <DollarSign className="size-4" />
                               <span>{bid.amount}</span>
                             </div>
                           </div>
                         </div>
                         {isMyAsk && bid.status === 'pending' && !hasAcceptedBid && !isActivityView && !newerBidExists && (
-                          <Button
-                            size="sm"
-                            onClick={() => handleAcceptClick(bid.id, bid.amount, bid.pianistName)}
-                            className="w-full mt-2"
-                            variant={isAuctionActive ? 'default' : 'default'}
-                          >
-                            {isAuctionActive ? 'Accept & End Auction' : 'Accept Bid'}
-                          </Button>
+                          <div style={{ display: 'flex', justifyContent: 'flex-end' }} className="mt-2">
+                            <button
+                              onClick={() => handleAcceptClick(bid.id, bid.amount, bid.pianistName)}
+                              style={{ background: '#16a34a' }}
+                              className="relative overflow-hidden transition-all duration-300 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] rounded-md h-9 px-6 py-2 inline-flex items-center justify-center text-sm border-0"
+                            >
+                              {isAuctionActive ? 'Accept & End Auction' : 'Accept Bid'}
+                            </button>
+                          </div>
                         )}
                       </div>
                     );
@@ -392,8 +399,8 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                 </Badge>
               )}
               {ask.archivedAt && (
-                <Badge className="bg-red-600 text-white shadow-lg shadow-red-600/50">
-                  Canceled
+                <Badge className="bg-yellow-600 text-white shadow-lg shadow-red-600/50">
+                  Archived
                 </Badge>
               )}
             </div>
@@ -407,7 +414,7 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
         onSubmit={handleSubmitBid}
         askCost={ask.cost}
         currentBid={myActiveBid?.amount}
-        highestBid={highestBid}
+        lowestBid={lowestBid}
         isRebid={!!myActiveBid}
       />
 

@@ -17,11 +17,11 @@ interface BidModalProps {
   onSubmit: (amount: number, message: string) => void;
   askCost: number;
   currentBid?: number;
-  highestBid?: number | null;
+  lowestBid?: number | null;
   isRebid?: boolean;
 }
 
-export function BidModal({ isOpen, onClose, onSubmit, askCost, currentBid, highestBid, isRebid = false }: BidModalProps) {
+export function BidModal({ isOpen, onClose, onSubmit, askCost, currentBid, lowestBid, isRebid = false }: BidModalProps) {
   const [amount, setAmount] = useState(askCost.toString());
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -30,9 +30,9 @@ export function BidModal({ isOpen, onClose, onSubmit, askCost, currentBid, highe
     e.preventDefault();
     const bidAmount = parseFloat(amount);
 
-    // Validate that new bid is higher than highest bid
-    if (highestBid && bidAmount <= highestBid) {
-      setError(`Your bid must be higher than the current highest bid of $${highestBid}`);
+    // Validate that new bid is lower than pianist's own previous bid (if rebidding)
+    if (isRebid && currentBid && bidAmount >= currentBid) {
+      setError(`Your new bid must be lower than your previous bid of $${currentBid}`);
       return;
     }
 
@@ -48,8 +48,8 @@ export function BidModal({ isOpen, onClose, onSubmit, askCost, currentBid, highe
         <DialogHeader>
           <DialogTitle>{isRebid ? 'Submit Another Bid' : 'Place Your Bid'}</DialogTitle>
           <DialogDescription>
-            {highestBid
-              ? `Your bid must be higher than the current highest bid of $${highestBid}`
+            {isRebid && currentBid
+              ? `Your new bid must be lower than your previous bid of $${currentBid}`
               : 'Submit your offer to accompany this soloist'
             }
           </DialogDescription>
@@ -68,7 +68,8 @@ export function BidModal({ isOpen, onClose, onSubmit, askCost, currentBid, highe
               id="amount"
               type="number"
               step="0.01"
-              min={highestBid ? (highestBid + 0.01).toString() : "0"}
+              min="0"
+              max={isRebid && currentBid ? (currentBid - 0.01).toString() : undefined}
               placeholder={askCost.toString()}
               value={amount}
               onChange={(e) => {
@@ -78,8 +79,10 @@ export function BidModal({ isOpen, onClose, onSubmit, askCost, currentBid, highe
               required
             />
             <p className="text-xs text-gray-500">
-              {highestBid
-                ? `Minimum: $${(highestBid + 0.01).toFixed(2)} (highest bid: $${highestBid})`
+              {isRebid && currentBid
+                ? `Maximum: $${(currentBid - 0.01).toFixed(2)} (your previous bid: $${currentBid})`
+                : lowestBid
+                ? `Current lowest bid: $${lowestBid}`
                 : `Suggested: $${askCost}`
               }
             </p>

@@ -26,7 +26,7 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
   const [pieces, setPieces] = useState<string[]>([]);
   const [currentPiece, setCurrentPiece] = useState('');
   const [duration, setDuration] = useState('');
-  const [costType, setCostType] = useState<'hourly' | 'per-piece'>('per-piece');
+  const [costType, setCostType] = useState<'hourly' | 'per-piece' | 'total'>('per-piece');
   const [cost, setCost] = useState('');
   const [location, setLocation] = useState('');
   const [dateType, setDateType] = useState<'single' | 'range' | 'semester'>('semester');
@@ -160,7 +160,7 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
 
           <div className="space-y-2">
             <Label>Cost Type *</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <button
                 type="button"
                 onClick={() => setCostType('per-piece')}
@@ -183,13 +183,24 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
               >
                 Hourly Rate
               </button>
+              <button
+                type="button"
+                onClick={() => setCostType('total')}
+                className={`p-3 rounded-lg border-2 transition-all ${
+                  costType === 'total'
+                    ? 'border-red-600 bg-red-50'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                Total Fee
+              </button>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="cost">
-                {costType === 'hourly' ? 'Hourly Rate' : 'Cost per Piece'} ($) *
+                {costType === 'hourly' ? 'Hourly Rate' : costType === 'total' ? 'Total Fee' : 'Cost per Piece'} ($) *
               </Label>
               <Input
                 id="cost"
