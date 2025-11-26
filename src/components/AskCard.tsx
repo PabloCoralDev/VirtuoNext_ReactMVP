@@ -107,24 +107,24 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
     <>
       <Card>
         <CardHeader>
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <Avatar>
-                <AvatarFallback>{ask.soloistName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+          <div className="flex flex-col sm:flex-row items-start justify-between mb-3 gap-3">
+            <div className="flex items-center gap-3 flex-1">
+              <Avatar className="h-10 w-10 sm:h-12 sm:w-12">
+                <AvatarFallback className="text-sm">{ask.soloistName.split(' ').map(n => n[0]).join('')}</AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="text-lg">{ask.soloistName}</h3>
-                <p className="text-sm text-gray-600">{ask.instrument}</p>
+                <h3 className="text-base sm:text-lg font-semibold">{ask.soloistName}</h3>
+                <p className="text-xs sm:text-sm text-gray-600">{ask.instrument}</p>
                 <p className="text-xs text-gray-500">Posted {getTimeAgo(ask.createdAt)}</p>
               </div>
             </div>
-            <div className="text-right">
-              <Badge variant={ask.costType === 'hourly' ? 'default' : ask.costType === 'total' ? 'outline' : 'secondary'}>
+            <div className="flex sm:flex-col items-center sm:items-end gap-2 sm:text-right">
+              <Badge variant={ask.costType === 'hourly' ? 'default' : ask.costType === 'total' ? 'outline' : 'secondary'} className="text-xs">
                 {ask.costType === 'hourly' ? 'Hourly' : ask.costType === 'total' ? 'Total Fee' : 'Per Piece'}
               </Badge>
-              <div className="mt-1">
-                <span className="text-2xl">${ask.cost}</span>
-                <span className="text-sm text-gray-600">
+              <div className="sm:mt-1">
+                <span className="text-xl sm:text-2xl font-bold">${ask.cost}</span>
+                <span className="text-xs sm:text-sm text-gray-600">
                   {ask.costType === 'hourly' ? '/hr' : ''}
                 </span>
               </div>
@@ -134,11 +134,11 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
           {/* Auction Timer - only show for active, non-archived auctions in main view */}
           {ask.auctionEndTime && ask.auctionStatus === 'active' && !ask.archivedAt && !isActivityView && (
             <div className="pt-4 mt-3">
-              <div className="inline-flex items-center gap-4 rounded-lg px-3 py-2 shadow-md" style={{ backgroundColor: '#AAA9AD' }}>
+              <div className="inline-flex flex-wrap items-center gap-2 sm:gap-4 rounded-lg px-3 py-2 shadow-md text-sm sm:text-base" style={{ backgroundColor: '#AAA9AD' }}>
                 <AuctionTimer auctionEndTime={ask.auctionEndTime} />
                 {lowestBid !== null && (
-                  <div className="flex items-center gap-2 text-white font-bold">
-                    <ArrowUp className="w-4 h-4" style={{ transform: 'rotate(180deg)' }} />
+                  <div className="flex items-center gap-2 text-white font-bold text-sm sm:text-base">
+                    <ArrowUp className="w-3 h-3 sm:w-4 sm:h-4" style={{ transform: 'rotate(180deg)' }} />
                     <span>Bid:</span>
                     <span>${lowestBid}</span>
                   </div>
@@ -167,9 +167,9 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
         </CardHeader>
 
         <CardContent className="space-y-4">
-          <p className="text-gray-700">{ask.description}</p>
+          <p className="text-sm sm:text-base text-gray-700">{ask.description}</p>
 
-          <div className="flex gap-6">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
             {/* Left side - User details */}
             <div className="flex-1 space-y-2 text-sm">
               {ask.pieces.length > 0 && (
@@ -185,29 +185,29 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                 </div>
               )}
               {ask.duration && (
-                <div className="flex items-center gap-2 text-gray-600">
+                <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm">
                   <Clock className="size-4" />
                   <span>{ask.duration}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm">
                 <Calendar className="size-4" />
-                <span>
+                <span className="break-words">
                   {ask.dateType === 'single' && ask.date && new Date(ask.date).toLocaleDateString()}
                   {ask.dateType === 'range' && ask.startDate && ask.endDate &&
                     `${new Date(ask.startDate).toLocaleDateString()} - ${new Date(ask.endDate).toLocaleDateString()}`}
                   {ask.dateType === 'semester' && ask.semester}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-gray-600">
+              <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm">
                 <MapPin className="size-4" />
-                <span>{ask.location}</span>
+                <span className="break-words">{ask.location}</span>
               </div>
             </div>
 
-            {/* Right side - Bid statistics */}
+            {/* Right side - Bid statistics - Stack on mobile */}
             {ask.bids.length > 0 && !isActivityView && (
-              <div className="w-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-4 border border-gray-200 space-y-2">
+              <div className="w-full sm:w-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border border-gray-200 space-y-2">
                 <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Bid Stats</h4>
                 <div className="space-y-1.5">
                   <div className="flex justify-between items-center">
@@ -360,7 +360,7 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
               style={{
                 background: '#fe440a'
               }}
-              className="relative overflow-hidden transition-all duration-300 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] rounded-md h-9 px-6 py-2 inline-flex items-center justify-center text-sm border-0"
+              className="relative overflow-hidden transition-all duration-300 text-white font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-95 rounded-md h-11 sm:h-9 px-6 py-2 inline-flex items-center justify-center text-sm sm:text-sm w-full sm:w-auto border-0"
             >
               {myActiveBid ? 'Submit Another Bid' : 'Place Bid'}
             </button>

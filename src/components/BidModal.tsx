@@ -44,7 +44,7 @@ export function BidModal({ isOpen, onClose, onSubmit, askCost, currentBid, lowes
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isRebid ? 'Submit Another Bid' : 'Place Your Bid'}</DialogTitle>
           <DialogDescription>

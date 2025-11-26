@@ -93,7 +93,7 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Post a New Ask</DialogTitle>
           <DialogDescription>

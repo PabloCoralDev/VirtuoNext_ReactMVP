@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Settings, FileText, TrendingUp, DollarSign, CreditCard } from 'lucide-react';
+import { Settings, FileText, TrendingUp, DollarSign, CreditCard, LogOut } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 import type { Ask } from './Marketplace';
 
@@ -13,6 +13,8 @@ interface ProfileSidebarProps {
   userName: string;
   userType: 'soloist' | 'pianist';
   onEditProfile: () => void;
+  onLogout?: () => void;
+  isMobileOverlay?: boolean;
 }
 
 interface ProfileData {
@@ -42,7 +44,7 @@ interface ActivityItem {
   subtitle: string;
 }
 
-export function ProfileSidebar({ userId, userEmail, userName, userType, onEditProfile }: ProfileSidebarProps) {
+export function ProfileSidebar({ userId, userEmail, userName, userType, onEditProfile, onLogout, isMobileOverlay = false }: ProfileSidebarProps) {
   const [profile, setProfile] = useState<ProfileData>({ bio: null, picture_url: null });
   const [metrics, setMetrics] = useState<Metrics>({
     profileViews: 0,
@@ -306,7 +308,7 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
   };
 
   return (
-    <div className="w-48 flex-shrink-0 space-y-3 sticky top-20 self-start overflow-hidden">
+    <div className={isMobileOverlay ? "w-full space-y-3" : "w-48 flex-shrink-0 space-y-3 sticky top-20 self-start"}>
       {/* Profile Card */}
       <Card className="h-fit">
         <CardContent className="pt-4 pb-4 px-4">
@@ -410,11 +412,11 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
       </Card>
 
       {/* Recent Activity Card */}
-      <Card className="h-fit max-h-[280px] overflow-hidden w-full">
+      <Card className={isMobileOverlay ? "h-fit w-full" : "h-fit max-h-[280px] overflow-hidden w-full"}>
         <CardHeader className="pb-1.5 pt-3.5 px-3">
           <CardTitle className="text-[9px] font-bold">Recent</CardTitle>
         </CardHeader>
-        <CardContent className="px-3 pb-2.5 overflow-y-auto overflow-x-hidden max-h-[240px]">
+        <CardContent className={isMobileOverlay ? "px-3 pb-2.5" : "px-3 pb-2.5 overflow-y-auto overflow-x-hidden max-h-[240px]"}>
           {recentActivity.length > 0 ? (
             <div className="space-y-1.5 w-full">
               {recentActivity.slice(0, 6).map(activity => {
@@ -491,6 +493,18 @@ export function ProfileSidebar({ userId, userEmail, userName, userType, onEditPr
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Logout Button - Only show if onLogout is provided */}
+      {onLogout && (
+        <Button
+          onClick={onLogout}
+          variant="outline"
+          className="w-full h-8 text-[7px] px-2 border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+        >
+          <LogOut className="size-3 mr-1" />
+          Logout
+        </Button>
       )}
     </div>
   );
