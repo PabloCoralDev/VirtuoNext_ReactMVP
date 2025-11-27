@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './shared/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from './shared/ui/avatar';
-import { Button } from './shared/ui/button';
-import { Badge } from './shared/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../shared/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '../shared/ui/avatar';
+import { Button } from '../shared/ui/button';
+import { Badge } from '../shared/ui/badge';
 import { Settings, FileText, TrendingUp, DollarSign, CreditCard, LogOut } from 'lucide-react';
-import { supabase } from '../utils/supabase/client';
+import { supabase } from '../../utils/supabase/client';
 import type { Ask } from './Marketplace';
 
 interface ProfileSidebarProps {

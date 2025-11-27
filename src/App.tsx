@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { LoginScreen } from './components/LoginScreen';
-import { Marketplace } from './components/Marketplace';
+import { Marketplace } from './components/PlatformWrapper';
 import { ProfilePage } from './components/ProfilePage';
 import { supabase } from './utils/supabase/client';
 import type { UserProfile } from './types/profile';

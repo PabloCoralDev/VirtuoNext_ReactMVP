@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Button } from './shared/ui/button';
+import { Button } from '../shared/ui/button';
 import { AskCard } from './AskCard';
-import { AskCardSkeleton } from './AskCardSkeleton';
+import { AskCardSkeleton } from '../shared/AskCardSkeleton';
 import { CreateAskModal } from './CreateAskModal';
 import { ProfileSidebar } from './ProfileSidebar';
-import { ContactCard } from './ContactCard';
+import { ContactCard } from '../shared/ContactCard';
 import { LogOut, Plus, Search, TrendingUp, Users, Music, Menu, X } from 'lucide-react';
-import { supabase } from '../utils/supabase/client';
+import { supabase } from '../../utils/supabase/client';
 import type { ContactReveal } from '@/types/auction';
-import virtuoNextLogo from '../ui_elements/VirtuoNext Logo.png';
+import virtuoNextLogo from '../../ui_elements/VirtuoNext Logo.png';
 
 interface MarketplaceProps {
   userId: string;
@@ -59,7 +59,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   // Fetch asks with their bids
   const fetchAsks = async (showLoading = false) => {
@@ -144,18 +143,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       setIsLoadingContacts(false);
     }
   };
-
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Body scroll lock when mobile sidebar is open
   useEffect(() => {
@@ -378,7 +365,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
               </div>
             </button>
 
-            {/* Right: Navigation, Post Ask Button & Logout */}
+            {/* Right: Navigation & Logout */}
             <div className="flex items-center gap-4">
               {/* LinkedIn-style Navigation */}
               <nav className="flex gap-3">
@@ -441,18 +428,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 )}
               </nav>
 
-              {/* Post Ask Button - Hidden on mobile */}
-              {userType === 'soloist' && !isMobile && (
-                <Button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="!bg-black hover:!bg-gray-800 !text-white !border-0 font-semibold shadow-lg"
-                  size="sm"
-                >
-                  <Plus className="size-4 mr-2" />
-                  Post Ask
-                </Button>
-              )}
-
               {/* Logout Icon */}
               <button
                 onClick={onLogout}
@@ -467,7 +442,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       </header>
 
       {/* Mobile Sidebar Overlay */}
-      {isMobile && isMobileSidebarOpen && (
+      {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 overflow-hidden">
           {/* Backdrop */}
           <div
@@ -532,25 +507,13 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
 
       <main className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="flex gap-6">
-          {/* Left Sidebar - Sticky - Hidden on mobile */}
-          {!isMobile && (
-            <ProfileSidebar
-              userId={userId}
-              userEmail={userEmail}
-              userName={userName}
-              userType={userType}
-              onEditProfile={onEditProfile}
-              onLogout={onLogout}
-            />
-          )}
-
           {/* Main Content Area */}
           <div className="flex-1 min-w-0 space-y-6 w-full">
           {/* All Asks/Bids Tab */}
           {activeTab === 'all' && (
             <div className="space-y-4">
             {/* Post Ask Button Card (Mobile only, Soloists only) */}
-            {isMobile && userType === 'soloist' && (
+            {userType === 'soloist' && (
               <button
                 onClick={() => setIsCreateModalOpen(true)}
                 style={{ background: '#000000', height: '56px' }}
@@ -581,7 +544,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                       onPlaceBid={handlePlaceBid}
                       onAcceptBid={handleAcceptBid}
                       onArchiveAsk={handleArchiveAsk}
-                      isMobile={isMobile}
                     />
                   ))
                 ) : !isCreatingAsk ? (
@@ -598,16 +560,14 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
           {activeTab === 'my-asks' && userType === 'soloist' && (
             <div className="space-y-4">
                 {/* Post Ask Button Card (Mobile only) */}
-                {isMobile && (
-                  <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    style={{ background: '#000000', height: '56px' }}
-                    className="w-full text-white rounded-lg px-4 flex items-center justify-center gap-2 shadow-md transition-all hover:opacity-90"
-                  >
-                    <Plus className="size-5" />
-                    <span className="font-semibold">Post New Ask</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  style={{ background: '#000000', height: '56px' }}
+                  className="w-full text-white rounded-lg px-4 flex items-center justify-center gap-2 shadow-md transition-all hover:opacity-90"
+                >
+                  <Plus className="size-5" />
+                  <span className="font-semibold">Post New Ask</span>
+                </button>
 
                 {/* Show skeleton card when creating a new ask */}
                 {isCreatingAsk && <AskCardSkeleton />}
@@ -623,7 +583,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                       onAcceptBid={handleAcceptBid}
                       onArchiveAsk={handleArchiveAsk}
                       isActivityView={true}
-                      isMobile={isMobile}
                     />
                   ))
                 ) : !isCreatingAsk ? (
@@ -687,7 +646,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                     onAcceptBid={handleAcceptBid}
                     onArchiveAsk={handleArchiveAsk}
                     isActivityView={true}
-                    isMobile={isMobile}
                   />
                 ))
               ) : (
@@ -703,7 +661,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
               onClose={() => setIsCreateModalOpen(false)}
               onSubmit={handleCreateAsk}
               userName={userName}
-              isMobile={!isMobile}
             />
           </div>
         </div>

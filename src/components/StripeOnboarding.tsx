@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './shared/ui/card';
+import { Button } from './shared/ui/button';
+import { Badge } from './shared/ui/badge';
 import { CheckCircle, XCircle, Loader2, CreditCard } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 

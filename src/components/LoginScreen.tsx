@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Button } from './shared/ui/button';
+import { Input } from './shared/ui/input';
+import { Label } from './shared/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './shared/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './shared/ui/tabs';
 import { supabase } from '../utils/supabase/client';
 import type { UserProfile } from '../types/profile';
 import virtuoNextLogo from '../ui_elements/VirtuoNext Logo.png';

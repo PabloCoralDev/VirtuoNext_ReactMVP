@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Card, CardContent, CardFooter, CardHeader } from './shared/ui/card';
-import { Badge } from './shared/ui/badge';
-import { Button } from './shared/ui/button';
-import { Avatar, AvatarFallback } from './shared/ui/avatar';
-import { BidModal } from './BidModal';
-import { AuctionTimer } from './AuctionTimer';
-import { AcceptBidDialog } from './AcceptBidDialog';
+import { Card, CardContent, CardFooter, CardHeader } from '../shared/ui/card';
+import { Badge } from '../shared/ui/badge';
+import { Button } from '../shared/ui/button';
+import { Avatar, AvatarFallback } from '../shared/ui/avatar';
+import { BidModal } from '../shared/BidModal';
+import { AuctionTimer } from '../shared/AuctionTimer';
+import { AcceptBidDialog } from '../shared/AcceptBidDialog';
 import { Calendar, MapPin, Music, Clock, DollarSign, ArrowUp } from 'lucide-react';
 import type { Ask, Bid } from './Marketplace';
 
@@ -17,10 +17,9 @@ interface AskCardProps {
   onAcceptBid: (askId: string, bidId: string) => void;
   onArchiveAsk: (askId: string) => void;
   isActivityView?: boolean;
-  isMobile?: boolean;
 }
 
-export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onArchiveAsk, isActivityView = false, isMobile = false }: AskCardProps) {
+export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onArchiveAsk, isActivityView = false }: AskCardProps) {
   const [isBidModalOpen, setIsBidModalOpen] = useState(false);
   const [showBids, setShowBids] = useState(false);
   const [acceptDialogOpen, setAcceptDialogOpen] = useState(false);
@@ -77,7 +76,7 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
     onPlaceBid(ask.id, {
       pianistName: userName,
       amount,
-      message, 
+      message,
     });
     setIsBidModalOpen(false);
   };
@@ -191,7 +190,7 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                   <span>{ask.duration}</span>
                 </div>
               )}
-              <div className={`flex ${isMobile ? 'flex-row gap-4' : 'flex-col gap-2'}`}>
+              <div className="flex flex-row gap-4">
                 <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm">
                   <Calendar className="size-4" />
                   <span className="break-words">
@@ -207,31 +206,6 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                 </div>
               </div>
             </div>
-
-            {/* Right side - Bid statistics - Hidden on mobile */}
-            {ask.bids.length > 0 && !isActivityView && !isMobile && (
-              <div className="w-full sm:w-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border border-gray-200 space-y-2">
-                <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Bid Stats</h4>
-                <div className="space-y-1.5">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs text-gray-600">Total Bids</span>
-                    <span className="text-sm font-bold text-gray-900">{ask.bids.length}</span>
-                  </div>
-                  {lowestBid && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Lowest Bid</span>
-                      <span className="text-sm font-bold text-green-600">${lowestBid}</span>
-                    </div>
-                  )}
-                  {averageBid && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-600">Avg. Bid</span>
-                      <span className="text-sm font-bold text-amber-600">${averageBid}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
 
           {ask.bids.length > 0 && (

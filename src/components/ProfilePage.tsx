@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Textarea } from './ui/textarea';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Button } from './shared/ui/button';
+import { Input } from './shared/ui/input';
+import { Label } from './shared/ui/label';
+import { Textarea } from './shared/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './shared/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from './shared/ui/avatar';
 import { ArrowLeft, Upload, Save, Loader2 } from 'lucide-react';
 import { supabase } from '../utils/supabase/client';
 

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Button } from './shared/ui/button';
+import { Button } from '../shared/ui/button';
 import { AskCard } from './AskCard';
-import { AskCardSkeleton } from './AskCardSkeleton';
+import { AskCardSkeleton } from '../shared/AskCardSkeleton';
 import { CreateAskModal } from './CreateAskModal';
 import { ProfileSidebar } from './ProfileSidebar';
-import { ContactCard } from './ContactCard';
-import { LogOut, Plus, Search, TrendingUp, Users, Music, Menu, X } from 'lucide-react';
-import { supabase } from '../utils/supabase/client';
+import { ContactCard } from '../shared/ContactCard';
+import { LogOut, Plus, Search, TrendingUp, Users, Music } from 'lucide-react';
+import { supabase } from '../../utils/supabase/client';
 import type { ContactReveal } from '@/types/auction';
-import virtuoNextLogo from '../ui_elements/VirtuoNext Logo.png';
+import virtuoNextLogo from '../../ui_elements/VirtuoNext Logo.png';
 
 interface MarketplaceProps {
   userId: string;
@@ -58,8 +58,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
   const [contactReveals, setContactReveals] = useState<ContactReveal[]>([]);
   const [isLoadingContacts, setIsLoadingContacts] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
 
   // Fetch asks with their bids
   const fetchAsks = async (showLoading = false) => {
@@ -144,31 +142,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       setIsLoadingContacts(false);
     }
   };
-
-  // Mobile detection
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Body scroll lock when mobile sidebar is open
-  useEffect(() => {
-    if (isMobileSidebarOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isMobileSidebarOpen]);
 
   useEffect(() => {
     fetchAsks(true); // Show loading on initial fetch
@@ -441,8 +414,8 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 )}
               </nav>
 
-              {/* Post Ask Button - Hidden on mobile */}
-              {userType === 'soloist' && !isMobile && (
+              {/* Post Ask Button - Always shown on desktop */}
+              {userType === 'soloist' && (
                 <Button
                   onClick={() => setIsCreateModalOpen(true)}
                   className="!bg-black hover:!bg-gray-800 !text-white !border-0 font-semibold shadow-lg"
@@ -466,101 +439,23 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
         </div>
       </header>
 
-      {/* Mobile Sidebar Overlay */}
-      {isMobile && isMobileSidebarOpen && (
-        <div className="fixed inset-0 z-50 overflow-hidden">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/50 transition-opacity"
-            onClick={() => setIsMobileSidebarOpen(false)}
-          />
-
-          {/* Sidebar Drawer */}
-          <div className="absolute inset-y-0 right-0 w-72 bg-white shadow-xl flex flex-col">
-            {/* Close Button */}
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-lg font-semibold text-gray-900">Profile</h2>
-              <button
-                onClick={() => setIsMobileSidebarOpen(false)}
-                className="p-2 rounded-lg text-gray-600 hover:text-red-600 hover:bg-gray-50 transition-all"
-              >
-                <X className="size-5" />
-              </button>
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto">
-              <ProfileSidebar
-                userId={userId}
-                userEmail={userEmail}
-                userName={userName}
-                userType={userType}
-                onEditProfile={onEditProfile}
-                isMobileOverlay={true}
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="p-4 border-t bg-gray-50 space-y-2">
-              {/* Post Ask Button (Soloists only) */}
-              {userType === 'soloist' && (
-                <Button
-                  onClick={() => {
-                    setIsMobileSidebarOpen(false);
-                    setIsCreateModalOpen(true);
-                  }}
-                  className="w-full !bg-black hover:!bg-gray-800 !text-white !border-0"
-                  size="sm"
-                >
-                  <Plus className="size-4 mr-2" />
-                  Post Ask
-                </Button>
-              )}
-              {/* Logout Button */}
-              <Button
-                onClick={onLogout}
-                className="w-full !bg-red-600 hover:!bg-red-700 !text-white !border-0"
-                size="sm"
-              >
-                <LogOut className="size-4 mr-2" />
-                Logout
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <main className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="flex gap-6">
-          {/* Left Sidebar - Sticky - Hidden on mobile */}
-          {!isMobile && (
-            <ProfileSidebar
-              userId={userId}
-              userEmail={userEmail}
-              userName={userName}
-              userType={userType}
-              onEditProfile={onEditProfile}
-              onLogout={onLogout}
-            />
-          )}
+          {/* Left Sidebar - Sticky - Always shown on desktop */}
+          <ProfileSidebar
+            userId={userId}
+            userEmail={userEmail}
+            userName={userName}
+            userType={userType}
+            onEditProfile={onEditProfile}
+            onLogout={onLogout}
+          />
 
           {/* Main Content Area */}
           <div className="flex-1 min-w-0 space-y-6 w-full">
           {/* All Asks/Bids Tab */}
           {activeTab === 'all' && (
             <div className="space-y-4">
-            {/* Post Ask Button Card (Mobile only, Soloists only) */}
-            {isMobile && userType === 'soloist' && (
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                style={{ background: '#000000', height: '56px' }}
-                className="w-full text-white rounded-lg px-4 flex items-center justify-center gap-2 shadow-md transition-all hover:opacity-90"
-              >
-                <Plus className="size-5" />
-                <span className="font-semibold">Post New Ask</span>
-              </button>
-            )}
-
             {isLoading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
@@ -581,7 +476,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                       onPlaceBid={handlePlaceBid}
                       onAcceptBid={handleAcceptBid}
                       onArchiveAsk={handleArchiveAsk}
-                      isMobile={isMobile}
                     />
                   ))
                 ) : !isCreatingAsk ? (
@@ -597,18 +491,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
           {/* My Asks Tab (Soloist only) */}
           {activeTab === 'my-asks' && userType === 'soloist' && (
             <div className="space-y-4">
-                {/* Post Ask Button Card (Mobile only) */}
-                {isMobile && (
-                  <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    style={{ background: '#000000', height: '56px' }}
-                    className="w-full text-white rounded-lg px-4 flex items-center justify-center gap-2 shadow-md transition-all hover:opacity-90"
-                  >
-                    <Plus className="size-5" />
-                    <span className="font-semibold">Post New Ask</span>
-                  </button>
-                )}
-
                 {/* Show skeleton card when creating a new ask */}
                 {isCreatingAsk && <AskCardSkeleton />}
 
@@ -623,7 +505,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                       onAcceptBid={handleAcceptBid}
                       onArchiveAsk={handleArchiveAsk}
                       isActivityView={true}
-                      isMobile={isMobile}
                     />
                   ))
                 ) : !isCreatingAsk ? (
@@ -687,7 +568,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                     onAcceptBid={handleAcceptBid}
                     onArchiveAsk={handleArchiveAsk}
                     isActivityView={true}
-                    isMobile={isMobile}
                   />
                 ))
               ) : (
@@ -703,7 +583,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
               onClose={() => setIsCreateModalOpen(false)}
               onSubmit={handleCreateAsk}
               userName={userName}
-              isMobile={!isMobile}
             />
           </div>
         </div>

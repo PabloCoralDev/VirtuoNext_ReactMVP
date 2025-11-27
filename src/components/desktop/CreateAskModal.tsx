@@ -5,12 +5,12 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from './shared/ui/dialog';
-import { Button } from './shared/ui/button';
-import { Input } from './shared/ui/input';
-import { Label } from './shared/ui/label';
-import { Textarea } from './shared/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './shared/ui/select';
+} from '../shared/ui/dialog';
+import { Button } from '../shared/ui/button';
+import { Input } from '../shared/ui/input';
+import { Label } from '../shared/ui/label';
+import { Textarea } from '../shared/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../shared/ui/select';
 import { X, Plus } from 'lucide-react';
 import type { Ask } from './Marketplace';
 
@@ -19,10 +19,9 @@ interface CreateAskModalProps {
   onClose: () => void;
   onSubmit: (ask: Omit<Ask, 'id' | 'bids'>) => void;
   userName: string;
-  isMobile?: boolean;
 }
 
-export function CreateAskModal({ isOpen, onClose, onSubmit, userName, isMobile = false }: CreateAskModalProps) {
+export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAskModalProps) {
   const [instrument, setInstrument] = useState('');
   const [pieces, setPieces] = useState<string[]>([]);
   const [currentPiece, setCurrentPiece] = useState('');
@@ -94,7 +93,7 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName, isMobile =
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={isMobile ? 'w-[94vw] max-h-[90vh] overflow-y-auto' : 'max-w-2xl w-full max-h-[90vh] overflow-y-auto'}>
+      <DialogContent className="max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Post a New Ask</DialogTitle>
           <DialogDescription>
