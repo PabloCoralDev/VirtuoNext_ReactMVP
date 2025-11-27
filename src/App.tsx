@@ -63,6 +63,7 @@ export default function App() {
     setAppState('login');
   };
 
+  //loading animation -- CHANGE THIS at some point
   if (appState === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-50">
@@ -74,6 +75,7 @@ export default function App() {
     );
   }
 
+  //directly return component login
   if (appState === 'login') {
     return <LoginScreen onAuthSuccess={handleAuthSuccess} />;
   }

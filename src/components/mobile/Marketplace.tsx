@@ -5,6 +5,7 @@ import { AskCardSkeleton } from '../shared/AskCardSkeleton';
 import { CreateAskModal } from './CreateAskModal';
 import { ProfileSidebar } from './ProfileSidebar';
 import { ContactCard } from '../shared/ContactCard';
+import { ProfilePage } from './test_ProfilePage';
 import { LogOut, Plus, Menu, X, Store, Inbox, Calendar, MoreHorizontal } from 'lucide-react';
 import { supabase } from '../../utils/supabase/client';
 import type { ContactReveal } from '@/types/auction';
@@ -388,7 +389,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
           <div className="flex gap-2 px-4 py-2 justify-center">
             {/* Marketplace Button */}
             <button
-              onClick={() => setActiveTab('all')}
+              onClick={() => ProfilePage()}
               style={{ background: activeTab === 'all' ? '#fe440a' : '#e5e7eb' }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap ${
                 activeTab === 'all' ? 'text-white' : 'text-gray-700'
@@ -418,7 +419,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
 
             {/* More Button */}
             <button
-              onClick={() => {/* TODO: Implement more menu */}}
+              onClick={() => {ProfilePage()}}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap bg-gray-200 text-gray-700"
             >
               <MoreHorizontal className="size-3" />
