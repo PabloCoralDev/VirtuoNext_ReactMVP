@@ -19,9 +19,10 @@ interface CreateAskModalProps {
   onClose: () => void;
   onSubmit: (ask: Omit<Ask, 'id' | 'bids'>) => void;
   userName: string;
+  isMobile?: boolean;
 }
 
-export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAskModalProps) {
+export function CreateAskModal({ isOpen, onClose, onSubmit, userName, isMobile = false }: CreateAskModalProps) {
   const [instrument, setInstrument] = useState('');
   const [pieces, setPieces] = useState<string[]>([]);
   const [currentPiece, setCurrentPiece] = useState('');
@@ -93,7 +94,7 @@ export function CreateAskModal({ isOpen, onClose, onSubmit, userName }: CreateAs
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl w-[95vw] sm:w-full max-h-[90vh] overflow-y-auto">
+      <DialogContent className={isMobile ? 'w-[94vw] max-h-[90vh] overflow-y-auto' : 'max-w-2xl w-full max-h-[90vh] overflow-y-auto'}>
         <DialogHeader>
           <DialogTitle>Post a New Ask</DialogTitle>
           <DialogDescription>

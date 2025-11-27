@@ -581,6 +581,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                       onPlaceBid={handlePlaceBid}
                       onAcceptBid={handleAcceptBid}
                       onArchiveAsk={handleArchiveAsk}
+                      isMobile={isMobile}
                     />
                   ))
                 ) : !isCreatingAsk ? (
@@ -622,6 +623,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                       onAcceptBid={handleAcceptBid}
                       onArchiveAsk={handleArchiveAsk}
                       isActivityView={true}
+                      isMobile={isMobile}
                     />
                   ))
                 ) : !isCreatingAsk ? (
@@ -685,6 +687,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                     onAcceptBid={handleAcceptBid}
                     onArchiveAsk={handleArchiveAsk}
                     isActivityView={true}
+                    isMobile={isMobile}
                   />
                 ))
               ) : (
@@ -700,75 +703,12 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
               onClose={() => setIsCreateModalOpen(false)}
               onSubmit={handleCreateAsk}
               userName={userName}
+              isMobile={!isMobile}
             />
           </div>
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      {isMobile && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
-          <div className="flex items-center justify-around py-4 px-4">
-            {/* Asks/Bids */}
-            <button
-              onClick={() => setActiveTab('all')}
-              style={
-                activeTab === 'all'
-                  ? { background: '#fe440a' }
-                  : {}
-              }
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                activeTab === 'all'
-                  ? 'text-white shadow-lg'
-                  : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
-              }`}
-            >
-              <Search className="size-5" />
-              <span className="text-xs font-semibold">
-                {userType === 'soloist' ? 'Asks' : 'Bids'}
-              </span>
-            </button>
-
-            {/* Activity */}
-            <button
-              onClick={() => setActiveTab(userType === 'soloist' ? 'my-asks' : 'my-bids')}
-              style={
-                activeTab === 'my-asks' || activeTab === 'my-bids'
-                  ? { background: '#fe440a' }
-                  : {}
-              }
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                activeTab === 'my-asks' || activeTab === 'my-bids'
-                  ? 'text-white shadow-lg'
-                  : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
-              }`}
-            >
-              <TrendingUp className="size-5" />
-              <span className="text-xs font-semibold">Activity</span>
-            </button>
-
-            {/* Contacts (Soloists only) */}
-            {userType === 'soloist' && (
-              <button
-                onClick={() => setActiveTab('my-contacts')}
-                style={
-                  activeTab === 'my-contacts'
-                    ? { background: '#fe440a' }
-                    : {}
-                }
-                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                  activeTab === 'my-contacts'
-                    ? 'text-white shadow-lg'
-                    : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
-                }`}
-              >
-                <Users className="size-5" />
-                <span className="text-xs font-semibold">Contacts</span>
-              </button>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

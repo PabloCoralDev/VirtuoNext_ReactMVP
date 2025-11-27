@@ -9,7 +9,7 @@ import { AcceptBidDialog } from './AcceptBidDialog';
 import { Calendar, MapPin, Music, Clock, DollarSign, ArrowUp } from 'lucide-react';
 import type { Ask, Bid } from './Marketplace';
 
-interface AskCardProps { 
+interface AskCardProps {
   ask: Ask;
   userType: 'soloist' | 'pianist';
   userName: string;
@@ -17,9 +17,10 @@ interface AskCardProps {
   onAcceptBid: (askId: string, bidId: string) => void;
   onArchiveAsk: (askId: string) => void;
   isActivityView?: boolean;
+  isMobile?: boolean;
 }
 
-export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onArchiveAsk, isActivityView = false }: AskCardProps) {
+export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onArchiveAsk, isActivityView = false, isMobile = false }: AskCardProps) {
   const [isBidModalOpen, setIsBidModalOpen] = useState(false);
   const [showBids, setShowBids] = useState(false);
   const [acceptDialogOpen, setAcceptDialogOpen] = useState(false);
@@ -190,23 +191,25 @@ export function AskCard({ ask, userType, userName, onPlaceBid, onAcceptBid, onAr
                   <span>{ask.duration}</span>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm">
-                <Calendar className="size-4" />
-                <span className="break-words">
-                  {ask.dateType === 'single' && ask.date && new Date(ask.date).toLocaleDateString()}
-                  {ask.dateType === 'range' && ask.startDate && ask.endDate &&
-                    `${new Date(ask.startDate).toLocaleDateString()} - ${new Date(ask.endDate).toLocaleDateString()}`}
-                  {ask.dateType === 'semester' && ask.semester}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm">
-                <MapPin className="size-4" />
-                <span className="break-words">{ask.location}</span>
+              <div className={`flex ${isMobile ? 'flex-row gap-4' : 'flex-col gap-2'}`}>
+                <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm">
+                  <Calendar className="size-4" />
+                  <span className="break-words">
+                    {ask.dateType === 'single' && ask.date && new Date(ask.date).toLocaleDateString()}
+                    {ask.dateType === 'range' && ask.startDate && ask.endDate &&
+                      `${new Date(ask.startDate).toLocaleDateString()} - ${new Date(ask.endDate).toLocaleDateString()}`}
+                    {ask.dateType === 'semester' && ask.semester}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-gray-600 text-xs sm:text-sm">
+                  <MapPin className="size-4" />
+                  <span className="break-words">{ask.location}</span>
+                </div>
               </div>
             </div>
 
-            {/* Right side - Bid statistics - Stack on mobile */}
-            {ask.bids.length > 0 && !isActivityView && (
+            {/* Right side - Bid statistics - Hidden on mobile */}
+            {ask.bids.length > 0 && !isActivityView && !isMobile && (
               <div className="w-full sm:w-48 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg p-3 sm:p-4 border border-gray-200 space-y-2">
                 <h4 className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Bid Stats</h4>
                 <div className="space-y-1.5">
