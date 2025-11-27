@@ -5,7 +5,7 @@ import { AskCardSkeleton } from '../shared/AskCardSkeleton';
 import { CreateAskModal } from './CreateAskModal';
 import { ProfileSidebar } from './ProfileSidebar';
 import { ContactCard } from '../shared/ContactCard';
-import { LogOut, Plus, Search, TrendingUp, Users, Music, Menu, X } from 'lucide-react';
+import { LogOut, Plus, Menu, X, Store, Inbox, Calendar, MoreHorizontal } from 'lucide-react';
 import { supabase } from '../../utils/supabase/client';
 import type { ContactReveal } from '@/types/auction';
 import virtuoNextLogo from '../../ui_elements/VirtuoNext Logo.png';
@@ -353,80 +353,23 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
               <img
                 src={virtuoNextLogo}
                 alt="VirtuoNext"
-                className="h-8 w-8 sm:h-10 sm:w-10 transition-transform group-hover:scale-105"
+                className="h-8 w-8 object-contain"
               />
-              <div className="flex flex-col items-start -mt-1">
-                <span className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-red-600 group-hover:from-amber-400 group-hover:via-amber-500 group-hover:to-red-500 transition-all leading-none">
-                  VirtuoNext
-                </span>
-                <span className="text-xs text-gray-500 mt-0.5 hidden sm:block">
-                  Welcome, {userName.split(' ')[0]} ({userType === 'soloist' ? 'Soloist' : 'Pianist'})
-                </span>
-              </div>
+              <span className="text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-500 via-amber-600 to-red-600 group-hover:from-amber-400 group-hover:via-amber-500 group-hover:to-red-500 transition-all leading-none">
+                VirtuoNext
+              </span>
             </button>
 
-            {/* Right: Navigation & Logout */}
-            <div className="flex items-center gap-4">
-              {/* LinkedIn-style Navigation */}
-              <nav className="flex gap-3">
-                {/* Asks/Bids */}
-                <button
-                  onClick={() => setActiveTab('all')}
-                  style={
-                    activeTab === 'all'
-                      ? { background: '#fe440a' }
-                      : {}
-                  }
-                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                    activeTab === 'all'
-                      ? 'text-white shadow-lg'
-                      : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <Search className="size-5" />
-                  <span className="text-xs font-semibold">
-                    {userType === 'soloist' ? 'Asks' : 'Bids'}
-                  </span>
-                </button>
-
-                {/* Activity (My Asks/My Bids) */}
-                <button
-                  onClick={() => setActiveTab(userType === 'soloist' ? 'my-asks' : 'my-bids')}
-                  style={
-                    activeTab === 'my-asks' || activeTab === 'my-bids'
-                      ? { background: '#fe440a' }
-                      : {}
-                  }
-                  className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                    activeTab === 'my-asks' || activeTab === 'my-bids'
-                      ? 'text-white shadow-lg'
-                      : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
-                  }`}
-                >
-                  <TrendingUp className="size-5" />
-                  <span className="text-xs font-semibold">Activity</span>
-                </button>
-
-                {/* Contacts (Soloists only) */}
-                {userType === 'soloist' && (
-                  <button
-                    onClick={() => setActiveTab('my-contacts')}
-                    style={
-                      activeTab === 'my-contacts'
-                        ? { background: '#fe440a' }
-                        : {}
-                    }
-                    className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                      activeTab === 'my-contacts'
-                        ? 'text-white shadow-lg'
-                        : 'text-gray-600 hover:text-amber-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Users className="size-5" />
-                    <span className="text-xs font-semibold">Contacts</span>
-                  </button>
-                )}
-              </nav>
+            {/* Right: Hamburger Menu & Logout */}
+            <div className="flex items-center gap-3">
+              {/* Hamburger Menu */}
+              <button
+                onClick={() => setIsMobileSidebarOpen(true)}
+                className="p-2.5 rounded-lg text-gray-600 hover:text-amber-600 hover:bg-gray-50 transition-all"
+                title="Menu"
+              >
+                <Menu className="size-5" />
+              </button>
 
               {/* Logout Icon */}
               <button
@@ -437,6 +380,50 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
                 <LogOut className="size-5" />
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Horizontal Carousel Navigation - Mobile only */}
+        <div className="bg-white border-b shadow-sm overflow-x-auto">
+          <div className="flex gap-2 px-4 py-2 justify-center">
+            {/* Marketplace Button */}
+            <button
+              onClick={() => setActiveTab('all')}
+              style={{ background: activeTab === 'all' ? '#fe440a' : '#e5e7eb' }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap ${
+                activeTab === 'all' ? 'text-white' : 'text-gray-700'
+              }`}
+            >
+              <Store className="size-3" />
+              <span className="text-xs font-semibold">Marketplace</span>
+            </button>
+
+            {/* Inbox Button */}
+            <button
+              onClick={() => {/* TODO: Implement inbox */}}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap bg-gray-200 text-gray-700"
+            >
+              <Inbox className="size-3" />
+              <span className="text-xs font-semibold">Inbox</span>
+            </button>
+
+            {/* Bookings Button */}
+            <button
+              onClick={() => {/* TODO: Implement bookings */}}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap bg-gray-200 text-gray-700"
+            >
+              <Calendar className="size-3" />
+              <span className="text-xs font-semibold">Bookings</span>
+            </button>
+
+            {/* More Button */}
+            <button
+              onClick={() => {/* TODO: Implement more menu */}}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap bg-gray-200 text-gray-700"
+            >
+              <MoreHorizontal className="size-3" />
+              <span className="text-xs font-semibold">More</span>
+            </button>
           </div>
         </div>
       </header>
