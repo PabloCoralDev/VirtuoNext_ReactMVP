@@ -1,7 +1,7 @@
 Basic VirtuoNext Implementation!
 
-- Created a basic working main layout with bids and asks
-- Implemented sidebar for user profile (only exists for soloists currently)
-- Users can sign up with email, and upload a profile picture
-- soloists can post asks
-- pianists can post bids
+- App is currently optimized to be a PWA, works
+- Having consistency issues with ChatScope rendering; May be issues with Safari, since they're not seen in Chrome
+- Chat updates properly real-time, chats are properly stored in Supabase
+- Payment processing schema migrations in Supabase are underway (trying to figure out a proper safe architecture)
+- Marketing is in the works 
