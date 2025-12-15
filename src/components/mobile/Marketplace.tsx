@@ -4,11 +4,12 @@ import { AskCard } from './AskCard';
 import { AskCardSkeleton } from '../shared/AskCardSkeleton';
 import { CreateAskModal } from './CreateAskModal';
 import { ProfileSidebar } from './ProfileSidebar';
-import { ContactCard } from '../shared/ContactCard';
 import { ProfilePage } from './test_ProfilePage';
+import { Inbox as InboxComponent } from './Inbox';
+import { MessageThread } from './MessageThread';
 import { LogOut, Plus, Menu, X, Store, Inbox, Calendar, MoreHorizontal } from 'lucide-react';
 import { supabase } from '../../utils/supabase/client';
-import type { ContactReveal } from '@/types/auction';
+import { createRelationship } from '../../utils/relationships';
 import virtuoNextLogo from '../../ui_elements/VirtuoNext Logo.png';
 
 interface MarketplaceProps {
@@ -56,10 +57,12 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingAsk, setIsCreatingAsk] = useState(false);
-  const [contactReveals, setContactReveals] = useState<ContactReveal[]>([]);
-  const [isLoadingContacts, setIsLoadingContacts] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
+  // View management for inbox/messaging
+  const [currentView, setCurrentView] = useState<'marketplace' | 'inbox' | 'messageThread'>('marketplace');
+  const [selectedRelationshipId, setSelectedRelationshipId] = useState<string | null>(null);
 
   // Fetch asks with their bids
   const fetchAsks = async (showLoading = false) => {
@@ -124,27 +127,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
     }
   };
 
-  // Fetch contact reveals for soloists
-  const fetchContactReveals = async () => {
-    if (userType !== 'soloist') return;
-
-    try {
-      setIsLoadingContacts(true);
-      const { data, error } = await supabase
-        .from('contact_reveals')
-        .select('*')
-        .eq('soloist_id', userId)
-        .order('revealed_at', { ascending: false });
-
-      if (error) throw error;
-      setContactReveals(data || []);
-    } catch (error) {
-      console.error('Error fetching contact reveals:', error);
-    } finally {
-      setIsLoadingContacts(false);
-    }
-  };
-
   // Body scroll lock when mobile sidebar is open
   useEffect(() => {
     if (isMobileSidebarOpen) {
@@ -160,9 +142,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
 
   useEffect(() => {
     fetchAsks(true); // Show loading on initial fetch
-    if (userType === 'soloist') {
-      fetchContactReveals();
-    }
 
     // Subscribe to real-time changes
     const asksSubscription = supabase
@@ -173,14 +152,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'bids' }, () => {
         fetchAsks(); // Don't show loading on real-time updates
-        if (userType === 'soloist') {
-          fetchContactReveals();
-        }
-      })
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'contact_reveals' }, () => {
-        if (userType === 'soloist') {
-          fetchContactReveals();
-        }
       })
       .subscribe();
 
@@ -287,6 +258,21 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       const ask = asks.find(a => a.id === askId);
       if (!ask) return;
 
+      // Find the accepted bid
+      const acceptedBid = ask.bids.find(b => b.id === bidId);
+      if (!acceptedBid) return;
+
+      // Get pianist user ID from the bid
+      const { data: pianistData, error: pianistError } = await supabase
+        .from('bids')
+        .select('user_id')
+        .eq('id', bidId)
+        .single();
+
+      if (pianistError || !pianistData) {
+        throw new Error('Could not find pianist user ID');
+      }
+
       // Update all bids: accept the selected one, reject all others
       const updatePromises = ask.bids.map(async bid => {
         const newStatus = bid.id === bidId ? 'accepted' : 'rejected';
@@ -304,13 +290,43 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
       });
 
       await Promise.all(updatePromises);
-      console.log('All bids updated successfully');
+
+      // Update ask status to completed
+      await supabase
+        .from('asks')
+        .update({ auction_status: 'completed' })
+        .eq('id', askId);
+
+      // Create relationship between pianist and soloist
+      const { data: relationshipData, error: relationshipError } = await createRelationship(
+        askId,
+        bidId,
+        pianistData.user_id,
+        acceptedBid.pianistName,
+        userId, // soloist user ID
+        userName, // soloist name
+        acceptedBid.amount,
+        {
+          dateType: ask.dateType,
+          date: ask.date,
+          startDate: ask.startDate,
+          endDate: ask.endDate,
+          semester: ask.semester
+        }
+      );
+
+      if (relationshipError) {
+        console.error('Error creating relationship:', relationshipError);
+        throw relationshipError;
+      }
+
+      console.log('Bid accepted and relationship created successfully');
 
       // Manually refetch to update UI immediately
       await fetchAsks();
-      if (userType === 'soloist') {
-        await fetchContactReveals();
-      }
+
+      // Show success message
+      alert(`Bid accepted! You can now message ${acceptedBid.pianistName} in your Inbox.`);
     } catch (error) {
       console.error('Error accepting bid:', error);
       alert('Failed to accept bid. Please try again.');
@@ -389,10 +405,10 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
           <div className="flex gap-2 px-4 py-2 justify-center">
             {/* Marketplace Button */}
             <button
-              onClick={() => ProfilePage()}
-              style={{ background: activeTab === 'all' ? '#fe440a' : '#e5e7eb' }}
+              onClick={() => setCurrentView('marketplace')}
+              style={{ background: currentView === 'marketplace' ? '#fe440a' : '#e5e7eb' }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap ${
-                activeTab === 'all' ? 'text-white' : 'text-gray-700'
+                currentView === 'marketplace' ? 'text-white' : 'text-gray-700'
               }`}
             >
               <Store className="size-3" />
@@ -401,8 +417,11 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
 
             {/* Inbox Button */}
             <button
-              onClick={() => {/* TODO: Implement inbox */}}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap bg-gray-200 text-gray-700"
+              onClick={() => setCurrentView('inbox')}
+              style={{ background: currentView === 'inbox' || currentView === 'messageThread' ? '#fe440a' : '#e5e7eb' }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded shadow transition-all whitespace-nowrap ${
+                currentView === 'inbox' || currentView === 'messageThread' ? 'text-white' : 'text-gray-700'
+              }`}
             >
               <Inbox className="size-3" />
               <span className="text-xs font-semibold">Inbox</span>
@@ -493,7 +512,32 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
+      {/* Conditional View Rendering */}
+      {currentView === 'inbox' && (
+        <InboxComponent
+          userId={userId}
+          userType={userType}
+          userName={userName}
+          onBack={() => setCurrentView('marketplace')}
+          onOpenThread={(relationshipId) => {
+            setSelectedRelationshipId(relationshipId);
+            setCurrentView('messageThread');
+          }}
+        />
+      )}
+
+      {currentView === 'messageThread' && selectedRelationshipId && (
+        <MessageThread
+          relationshipId={selectedRelationshipId}
+          userId={userId}
+          userType={userType}
+          userName={userName}
+          onBack={() => setCurrentView('inbox')}
+        />
+      )}
+
+      {currentView === 'marketplace' && (
+        <main className="max-w-7xl mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="flex gap-6">
           {/* Main Content Area */}
           <div className="flex-1 min-w-0 space-y-6 w-full">
@@ -581,45 +625,6 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
             </div>
           )}
 
-          {/* My Contacts Tab (Soloist only) */}
-          {activeTab === 'my-contacts' && userType === 'soloist' && (
-            <div className="space-y-4">
-                {isLoadingContacts ? (
-                  <div className="text-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600">Loading contacts...</p>
-                  </div>
-                ) : contactReveals.length > 0 ? (
-                  contactReveals.map(contact => {
-                    // Find the corresponding ask for this contact
-                    const ask = asks.find(a => a.id === contact.ask_id);
-                    const bid = ask?.bids.find(b => b.id === contact.bid_id);
-
-                    return (
-                      <ContactCard
-                        key={contact.id}
-                        contact={contact}
-                        askDetails={ask ? {
-                          instrument: ask.instrument,
-                          pieces: ask.pieces,
-                          dateType: ask.dateType,
-                          date: ask.date,
-                          startDate: ask.startDate,
-                          endDate: ask.endDate,
-                          semester: ask.semester,
-                        } : undefined}
-                        bidAmount={bid?.amount}
-                      />
-                    );
-                  })
-                ) : (
-                  <div className="text-center py-12 text-gray-500">
-                    No accepted bids yet. When you accept a bid, pianist contact information will appear here.
-                  </div>
-                )}
-            </div>
-          )}
-
           {/* My Bids Tab (Pianist only) */}
           {activeTab === 'my-bids' && userType === 'pianist' && (
             <div className="space-y-4">
@@ -653,6 +658,7 @@ export function Marketplace({ userId, userType, userName, userEmail, onLogout, o
           </div>
         </div>
       </main>
+      )}
 
     </div>
   );

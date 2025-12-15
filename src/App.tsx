@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { LoginScreen } from './components/LoginScreen';
 import { Marketplace } from './components/PlatformWrapper';
+import { GuestMarketplace } from './components/GuestMarketplace';
 import { ProfilePage } from './components/ProfilePage';
 import { supabase } from './utils/supabase/client';
 import type { UserProfile } from './types/profile';
 
-type AppState = 'loading' | 'login' | 'marketplace' | 'profile';
+type AppState = 'loading' | 'login' | 'marketplace' | 'profile' | 'guest';
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>('loading');
@@ -63,6 +64,14 @@ export default function App() {
     setAppState('login');
   };
 
+  const handleGuestMode = () => {
+    setAppState('guest');
+  };
+
+  const handleBackToLogin = () => {
+    setAppState('login');
+  };
+
   //loading animation -- CHANGE THIS at some point
   if (appState === 'loading') {
     return (
@@ -77,7 +86,11 @@ export default function App() {
 
   //directly return component login
   if (appState === 'login') {
-    return <LoginScreen onAuthSuccess={handleAuthSuccess} />;
+    return <LoginScreen onAuthSuccess={handleAuthSuccess} onGuestMode={handleGuestMode} />;
+  }
+
+  if (appState === 'guest') {
+    return <GuestMarketplace onSignUp={handleBackToLogin} />;
   }
 
   if (appState === 'marketplace' && profile) {
